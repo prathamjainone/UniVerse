@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 from typing import List
+from services.email_service import send_email_notification
 from models import ProjectBase
 from database import get_collection, create_document, update_document
 from pydantic import BaseModel
@@ -120,7 +121,7 @@ def add_project_comment(project_id: str, payload: CommentRequest):
     return {"success": False, "error": "Project not found"}
 
 @router.post("/{project_id}/join")
-def join_project(project_id: str, payload: JoinRequest):
+def join_project(project_id: str, payload: JoinRequest, background_tasks: BackgroundTasks):
     docs = get_collection('projects')
     for doc in docs:
         if doc.get("id") == project_id:
@@ -140,6 +141,13 @@ def join_project(project_id: str, payload: JoinRequest):
                 else:
                     join_requests.append(payload.user_id)
                     status = "requested"
+                    from database import get_document
+                    req_user = get_document('users', payload.user_id)
+                    owner_profile = get_document('users', doc.get("owner_uid"))
+                    if owner_profile and req_user and owner_profile.get("email"):
+                        subject = f"New Join Request for {doc.get('title', 'your project')}"
+                        body = f"User {req_user.get('display_name')} has requested to join your project."
+                        background_tasks.add_task(send_email_notification, owner_profile.get("email"), subject, body)
                 
                 update_document('projects', project_id, {"join_requests": join_requests})
                 return {"success": True, "status": status, "join_requests": join_requests}
@@ -147,7 +155,7 @@ def join_project(project_id: str, payload: JoinRequest):
     return {"success": False, "error": "Project not found"}
 
 @router.post("/{project_id}/requests/{user_id}/accept")
-def accept_join_request(project_id: str, user_id: str):
+def accept_join_request(project_id: str, user_id: str, background_tasks: BackgroundTasks):
     from database import get_document
     proj = get_document('projects', project_id)
     if not proj:
@@ -161,12 +169,17 @@ def accept_join_request(project_id: str, user_id: str):
         if user_id not in members:
             members.append(user_id)
         update_document('projects', project_id, {"members": members, "join_requests": join_requests})
+        req_user = get_document('users', user_id)
+        if req_user and req_user.get("email"):
+            subject = f"Join Request Accepted for {proj.get('title', 'Unknown Project')}"
+            body = f"Congratulations! Your request to join the project has been accepted."
+            background_tasks.add_task(send_email_notification, req_user.get("email"), subject, body)
         return {"success": True}
         
     return {"success": False, "error": "User not in requests"}
 
 @router.post("/{project_id}/requests/{user_id}/reject")
-def reject_join_request(project_id: str, user_id: str):
+def reject_join_request(project_id: str, user_id: str, background_tasks: BackgroundTasks):
     from database import get_document
     proj = get_document('projects', project_id)
     if not proj:
@@ -177,6 +190,11 @@ def reject_join_request(project_id: str, user_id: str):
     if user_id in join_requests:
         join_requests.remove(user_id)
         update_document('projects', project_id, {"join_requests": join_requests})
+        req_user = get_document('users', user_id)
+        if req_user and req_user.get("email"):
+            subject = f"Join Request Rejected for {proj.get('title', 'Unknown Project')}"
+            body = f"Your request to join the project has been declined."
+            background_tasks.add_task(send_email_notification, req_user.get("email"), subject, body)
         return {"success": True}
         
     return {"success": False, "error": "User not in requests"}
@@ -278,3 +296,23 @@ def generate_mom(project_id: str, payload: GenerateMOMRequest):
     mom_text = generate_mom_from_transcripts(payload.transcripts)
     return {"success": True, "mom": mom_text}
 
+@router.post("/{project_id}/notify_meeting")
+def notify_meeting(project_id: str, background_tasks: BackgroundTasks):
+    from database import get_document
+    proj = get_document('projects', project_id)
+    if not proj:
+        return {"success": False, "error": "Project not found"}
+        
+    members = proj.get("members", [])
+    members_notified = 0
+    for member_id in members:
+        if member_id == proj.get("owner_uid"):
+            continue
+        req_user = get_document('users', member_id)
+        if req_user and req_user.get("email"):
+            subject = f"War Room Active: {proj.get('title', 'Project')}"
+            body = f"The Team Lead has joined the War Room (Video Call) for project: {proj.get('title', 'Project')}. Please join the meeting!"
+            background_tasks.add_task(send_email_notification, req_user.get("email"), subject, body)
+            members_notified += 1
+            
+    return {"success": True, "members_notified": members_notified}

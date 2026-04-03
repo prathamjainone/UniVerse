@@ -422,6 +422,9 @@ const [isMuted, setIsMuted] = useState(false);
      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
         socketRef.current.send(JSON.stringify({ type: 'webrtc_join', sender: user.uid }));
       }
+      if (isLeader) {
+        fetch(`${API_URL}/api/projects/${projectId}/notify_meeting`, { method: 'POST' }).catch(e => console.error(e));
+      }
     } catch (err) { alert("Camera/Microphone permissions denied or devices not found."); }
   };
 
