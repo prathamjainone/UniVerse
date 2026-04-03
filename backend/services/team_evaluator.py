@@ -4,15 +4,19 @@ import re
 from groq import Groq
 from dotenv import load_dotenv
 
-load_dotenv()
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
+load_dotenv(override=True)
+
+def get_groq_client():
+    api_key = os.getenv("GROQ_API_KEY")
+    return Groq(api_key=api_key) if api_key else None
 
 def evaluate_with_groq(project_details: dict, candidates: list) -> dict:
     """
     Calls Groq Llama-3.1 to perform high-fidelity team analysis.
     Returns a JSON compatible with the deterministic structure.
     """
+    client = get_groq_client()
+    if not client: return None
     prompt = f"""
     You are an expert AI system evaluating team compatibility for a software project on the Uni-Verse platform.
     Your goal is to provide a High-Fidelity Semantic Compatibility report for the Project Admin.
@@ -46,7 +50,7 @@ def evaluate_with_groq(project_details: dict, candidates: list) -> dict:
     
     try:
         response = client.chat.completions.create(
-            model="llama-3.1-70b-versatile",
+            model="llama-3.3-70b-versatile",
             messages=[{"role": "system", "content": "You are a professional project manager API. Output valid JSON only."},
                       {"role": "user", "content": prompt}],
             response_format={"type": "json_object"}
@@ -64,7 +68,7 @@ def evaluate_team_compatibility(project_details: dict, candidates: list) -> dict
     if not candidates:
         return None
 
-    if client:
+    if get_groq_client():
         ai_result = evaluate_with_groq(project_details, candidates)
         if ai_result:
             ai_result["project_title"] = project_details.get("title")

@@ -24,6 +24,7 @@ export default function ProjectDetails() {
   const [commentText, setCommentText] = useState("");
   const [matchResult, setMatchResult] = useState(null);
   const [isMatching, setIsMatching] = useState(false);
+
   const [activeTab, setActiveTab] = useState("discussion"); // discussion or warroom
 
   // --- GitHub Intel Modal State ---
@@ -96,6 +97,9 @@ export default function ProjectDetails() {
       setIsMatching(false);
     }
   };
+
+
+
 
   const handleDelete = async () => {
     if (!window.confirm("Are you sure you want to delete this project?")) return;
@@ -491,6 +495,7 @@ export default function ProjectDetails() {
               </button>
             )}
           </div>
+
 
           {/* Pending Applications - ONLY VISIBLE TO LEADER */}
           {user && project.owner_uid === user.uid && project.join_requests_info?.length > 0 && (
