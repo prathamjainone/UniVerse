@@ -78,11 +78,11 @@ export default function WarRoomChat({ project, user }) {
         const [owner, repo] = cleaned.split('/');
         if (owner && repo) return { owner, repo };
       }
-    } catch {}
+    } catch { }
     return null;
   };
 
-  // --- Fetch GitHub Data ---
+  // --- Fetch GitHub Data (via backend proxy to avoid rate limits) ---
   const fetchRepoData = async (url) => {
     const parsed = parseGithubRepo(url || repoUrl);
     if (!parsed) { setRepoError('Invalid repo URL'); return; }
@@ -90,8 +90,8 @@ export default function WarRoomChat({ project, user }) {
     setRepoError('');
     try {
       const [commitsRes, pullsRes] = await Promise.all([
-        fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/commits?per_page=10`),
-        fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/pulls?state=open&per_page=5`)
+        fetch(`${API_URL}/api/vetting/github-proxy/${parsed.owner}/${parsed.repo}/commits?per_page=10`),
+        fetch(`${API_URL}/api/vetting/github-proxy/${parsed.owner}/${parsed.repo}/pulls?state=open&per_page=5`)
       ]);
       if (!commitsRes.ok) throw new Error(`Repo not found or private`);
       const commitsData = await commitsRes.json();
@@ -156,7 +156,7 @@ export default function WarRoomChat({ project, user }) {
         setMessages(prev => [...prev, data]);
         return;
       }
-      
+
       if (data.type === 'editor_sync' && data.sender !== user.uid) {
         setSharedNotes(data.payload);
         return;
@@ -269,7 +269,7 @@ export default function WarRoomChat({ project, user }) {
       Object.values(peerConnections.current).forEach(pc => {
         const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
         if (sender) {
-            sender.replaceTrack(screenTrack).catch(e => console.error("ReplaceTrack Error", e));
+          sender.replaceTrack(screenTrack).catch(e => console.error("ReplaceTrack Error", e));
         }
       });
 
@@ -283,30 +283,30 @@ export default function WarRoomChat({ project, user }) {
       setIsScreenSharing(true);
 
       screenTrack.onended = () => {
-         stopScreenShare();
+        stopScreenShare();
       };
     } catch (err) { console.error("Screen Share Failed", err); }
   };
 
   const stopScreenShare = async () => {
-     setIsScreenSharing(false);
-     try {
-       const camStream = await navigator.mediaDevices.getUserMedia({ video: true });
-       const camTrack = camStream.getVideoTracks()[0];
-       
-       Object.values(peerConnections.current).forEach(pc => {
-         const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
-         if (sender) sender.replaceTrack(camTrack).catch(e => console.error(e));
-       });
-       
-       if (localStreamRef.current) {
-         const restoredStream = new MediaStream([camTrack]);
-         const audioTracks = localStreamRef.current.getAudioTracks();
-         if (audioTracks.length > 0) restoredStream.addTrack(audioTracks[0]);
-         setLocalStream(restoredStream);
-         localStreamRef.current = restoredStream;
-       }
-     } catch(e) { console.error("Restore Camera Failed", e); }
+    setIsScreenSharing(false);
+    try {
+      const camStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const camTrack = camStream.getVideoTracks()[0];
+
+      Object.values(peerConnections.current).forEach(pc => {
+        const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+        if (sender) sender.replaceTrack(camTrack).catch(e => console.error(e));
+      });
+
+      if (localStreamRef.current) {
+        const restoredStream = new MediaStream([camTrack]);
+        const audioTracks = localStreamRef.current.getAudioTracks();
+        if (audioTracks.length > 0) restoredStream.addTrack(audioTracks[0]);
+        setLocalStream(restoredStream);
+        localStreamRef.current = restoredStream;
+      }
+    } catch (e) { console.error("Restore Camera Failed", e); }
   };
 
   const leaveHuddle = () => {
@@ -354,33 +354,31 @@ export default function WarRoomChat({ project, user }) {
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 h-[800px]">
-      
+
       {/* Left Pane: Notes & Repo Tabs */}
       <div className="flex-1 flex flex-col bg-black/40 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl shadow-2xl relative">
         {/* Tab Header */}
         <div className="p-4 bg-gradient-to-r from-teal-500/10 to-indigo-500/10 border-b border-white/5 z-10 relative">
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={() => setLeftTab('notes')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
-                leftTab === 'notes' 
-                  ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 shadow-lg' 
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${leftTab === 'notes'
+                  ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 shadow-lg'
                   : 'text-slate-500 hover:text-slate-300 border border-transparent'
-              }`}
+                }`}
             >
               <Code size={14} /> Live Notes
             </button>
-            <button 
+            <button
               onClick={() => setLeftTab('repo')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
-                leftTab === 'repo' 
-                  ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 shadow-lg' 
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${leftTab === 'repo'
+                  ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 shadow-lg'
                   : 'text-slate-500 hover:text-slate-300 border border-transparent'
-              }`}
+                }`}
             >
               <Github size={14} /> Project Repo
             </button>
-            
+
             <div className="ml-auto flex items-center gap-1.5">
               <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-teal-500 animate-pulse' : 'bg-red-500'}`}></div>
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">
@@ -410,7 +408,7 @@ export default function WarRoomChat({ project, user }) {
                 </div>
                 <h3 className="text-lg font-black text-white">Connect Your Repository</h3>
                 <p className="text-xs text-slate-400 max-w-sm">Link your team's GitHub repository to see live commits, open PRs, and access the browser IDE.</p>
-                
+
                 {isLeader ? (
                   <div className="w-full max-w-sm space-y-3">
                     <input
@@ -421,8 +419,8 @@ export default function WarRoomChat({ project, user }) {
                       onKeyDown={e => e.key === 'Enter' && saveRepoUrl()}
                       className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors"
                     />
-                    <button 
-                      onClick={saveRepoUrl} 
+                    <button
+                      onClick={saveRepoUrl}
                       disabled={savingRepo || !repoInput.trim()}
                       className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
                     >
@@ -509,7 +507,7 @@ export default function WarRoomChat({ project, user }) {
                     <div className="relative">
                       {/* Timeline line */}
                       <div className="absolute left-[11px] top-3 bottom-3 w-px bg-gradient-to-b from-emerald-500/30 via-slate-700/30 to-transparent"></div>
-                      
+
                       <div className="space-y-1">
                         {commits.map((c, i) => (
                           <div key={c.sha} className="flex items-start gap-3 p-2 rounded-lg hover:bg-white/[0.02] transition-colors group relative">
@@ -544,10 +542,10 @@ export default function WarRoomChat({ project, user }) {
         <div className="p-4 bg-gradient-to-r from-teal-500/10 to-indigo-500/10 border-b border-white/5 flex flex-col gap-3 z-10 relative">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-               <Terminal size={16} className="text-indigo-400" /> WebRTC Comms
+              <Terminal size={16} className="text-indigo-400" /> WebRTC Comms
             </h3>
           </div>
-          
+
           <div className="flex items-center gap-2">
             {!inCall ? (
               <button onClick={startHuddle} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg shadow-lg transition-all border border-indigo-500/50">
@@ -556,13 +554,13 @@ export default function WarRoomChat({ project, user }) {
             ) : (
               <>
                 {!isScreenSharing ? (
-                   <button onClick={shareScreen} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold rounded-lg transition-all">
-                     <Monitor size={14} /> Present Screen
-                   </button>
+                  <button onClick={shareScreen} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold rounded-lg transition-all">
+                    <Monitor size={14} /> Present Screen
+                  </button>
                 ) : (
-                   <button onClick={stopScreenShare} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-lg transition-all">
-                     <Video size={14} /> Back to Camera
-                   </button>
+                  <button onClick={stopScreenShare} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-lg transition-all">
+                    <Video size={14} /> Back to Camera
+                  </button>
                 )}
                 <button onClick={leaveHuddle} className="flex-none p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-all border border-red-500/30">
                   <PhoneOff size={16} />
@@ -579,7 +577,7 @@ export default function WarRoomChat({ project, user }) {
                 {localStream && <VideoPlayer stream={localStream} muted={true} isScreenShare={isScreenSharing} label={`${user.display_name} (Me)`} />}
                 {Object.entries(remoteStreams).map(([uid, stream]) => {
                   const memberInfo = project?.members_info?.find(m => m.uid === uid);
-                  const displayName = memberInfo ? memberInfo.name : `Peer ${uid.slice(0,4)}`;
+                  const displayName = memberInfo ? memberInfo.name : `Peer ${uid.slice(0, 4)}`;
                   return <VideoPlayer key={uid} stream={stream} muted={false} label={displayName} />;
                 })}
               </div>
