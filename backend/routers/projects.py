@@ -1,9 +1,11 @@
 from fastapi import APIRouter
 from typing import List
 from models import ProjectBase
-from database import get_collection, create_document, update_document
+from database import get_collection, create_document, update_document, get_document
 from pydantic import BaseModel
-
+from services.team_evaluator import evaluate_team_compatibility
+import json
+import os
 router = APIRouter(prefix="/api/projects", tags=["Projects"])
 
 class UpvoteRequest(BaseModel):
@@ -236,10 +238,24 @@ def match_project(project_id: str, payload: dict):
     user_profile = get_document('users', user_id)
     student_skills = user_profile.get("skills", []) if user_profile else inline_skills
     
-    project_reqs = ", ".join(proj.get("required_skills", []))
+    # Enhanced Context for Semantic Matching
+    project_context = {
+        "title": proj.get("title", ""),
+        "description": proj.get("description", ""),
+        "type": proj.get("project_type", "Full-Stack"),
+        "difficulty": proj.get("difficulty", "Intermediate"),
+        "required_skills": proj.get("required_skills", [])
+    }
     
-    # Always run matcher — calculate_match_score handles empty skills gracefully
-    match_result = calculate_match_score(student_skills, project_reqs)
+    student_profile = {
+        "name": user_profile.get("display_name", "Student") if user_profile else "Student",
+        "skills": student_skills,
+        "bio": user_profile.get("bio", "") if user_profile else "",
+        "github": user_profile.get("github", "") if user_profile else ""
+    }
+    
+    match_result = calculate_match_score(student_profile, project_context)
+    
     return {"success": True, "match": match_result}
 
 class UpdateProjectGithub(BaseModel):
@@ -262,6 +278,43 @@ def delete_project(project_id: str):
         return {"success": True}
     return {"success": False, "error": "Project not found"}
 
+
+@router.patch("/{project_id}/requirements")
+def update_project_requirements(project_id: str, requirements: dict):
+    success = update_document('projects', project_id, requirements)
+    return {"success": success}
+
+@router.post("/{project_id}/team-analysis")
+def get_team_analysis(project_id: str):
+    proj = get_document('projects', project_id)
+    if not proj:
+        return {"success": False, "error": "Project not found"}
+    
+    # 1. Gather all existing members and current applicants
+    member_uids = proj.get("members", [])
+    applicant_uids = proj.get("join_requests", [])
+    
+    candidates = []
+    # Resolve all potential team members (Current + Applicants)
+    for uid in (member_uids + applicant_uids):
+        user_profile = get_document("users", uid)
+        if user_profile:
+            candidates.append({
+                "name": user_profile.get("display_name", "Unknown"),
+                "skills": user_profile.get("skills", []),
+                "role": user_profile.get("role") or user_profile.get("branch", "Generalist"), 
+                "experience_level": user_profile.get("experience_level", "Junior"),
+                "bio": user_profile.get("bio", "")
+            })
+
+    # 2. If no real applicants/members, load mock candidates for demonstration
+    # 2. No mock fallback for team intelligence — keep it real or empty
+    if not candidates:
+        return {"success": True, "analysis": None}
+        
+    analysis = evaluate_team_compatibility(proj, candidates)
+    return {"success": True, "analysis": analysis}
+
 class GenerateMOMRequest(BaseModel):
     transcripts: List[str]
 
@@ -277,4 +330,5 @@ def generate_mom(project_id: str, payload: GenerateMOMRequest):
         
     mom_text = generate_mom_from_transcripts(payload.transcripts)
     return {"success": True, "mom": mom_text}
+
 
