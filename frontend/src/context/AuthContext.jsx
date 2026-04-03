@@ -8,6 +8,39 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [onlineUsers, setOnlineUsers] = useState([]);
+
+  // Presence WebSocket
+  useEffect(() => {
+    if (!user) {
+      setOnlineUsers([]);
+      return;
+    }
+    
+    const wsBase = API_URL.replace(/^http/, 'ws');
+    const ws = new WebSocket(`${wsBase}/ws/presence/${user.uid}`);
+    
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'sync') {
+          setOnlineUsers(data.online_users || []);
+        } else if (data.type === 'presence_update') {
+          if (data.status === 'online') {
+            setOnlineUsers(prev => prev.includes(data.uid) ? prev : [...prev, data.uid]);
+          } else {
+            setOnlineUsers(prev => prev.filter(uid => uid !== data.uid));
+          }
+        }
+      } catch (err) {
+        console.error("Presence WS parsing error", err);
+      }
+    };
+    
+    return () => {
+      ws.close();
+    };
+  }, [user]);
 
   // Initialize from storage for persistence
   useEffect(() => {
@@ -102,7 +135,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUser, onlineUsers }}>
       {!loading && children}
     </AuthContext.Provider>
   );

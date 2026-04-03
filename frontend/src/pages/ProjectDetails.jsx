@@ -17,7 +17,7 @@ import ContributionTracker from '../components/ContributionTracker';
 export default function ProjectDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, login } = useAuth();
+  const { user, login, onlineUsers = [] } = useAuth();
 
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -452,8 +452,11 @@ export default function ProjectDetails() {
             <div className="space-y-4">
               {project.members_info?.map((m) => (
                 <div key={m.uid} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/5 group">
-                  <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-300">
-                    {m.name.charAt(0)}
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-300">
+                      {m.name.charAt(0)}
+                    </div>
+                    <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#121212] ${onlineUsers.includes(m.uid) ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500'}`} title={onlineUsers.includes(m.uid) ? "Online" : "Offline"} />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-white leading-none mb-1">{m.name} {m.uid === project.owner_uid && <span className="text-[10px] text-teal-500 font-black ml-1">OWNER</span>}</p>
@@ -469,7 +472,7 @@ export default function ProjectDetails() {
                       <Trash2 size={14} />
                     </button>
                   )}
-                  <button className="text-slate-600 hover:text-white transition-colors group-hover:scale-110 ml-1">
+                  <button onClick={() => m.email ? window.open(`mailto:${m.email}`, '_blank') : alert('No email provided by this user.')} className="text-slate-600 hover:text-white transition-colors group-hover:scale-110 ml-1" title="Send Email">
                     <Mail size={14} />
                   </button>
                 </div>

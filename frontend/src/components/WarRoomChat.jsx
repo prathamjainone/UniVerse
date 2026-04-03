@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, Terminal, MessageSquare, Video, VideoOff, PhoneOff, Monitor, Code, Github, ExternalLink, GitCommit, GitPullRequest, RefreshCw, Link2, Save, Mic, MicOff } from 'lucide-react';
+import { Send, Terminal, MessageSquare, Video, VideoOff, PhoneOff, Monitor, Code, Github, ExternalLink, GitCommit, GitPullRequest, RefreshCw, Link2, Save, Mic, MicOff, X } from 'lucide-react';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import API_URL from '../api';
 
 // --- Small Helper for Video ---
-function VideoPlayer({ stream, muted, label, isScreenShare }) {
+function VideoPlayer({ stream, muted, label, isScreenShare, onDoubleClick, isFullscreen }) {
   const videoRef = useRef();
    const [isSpeaking, setIsSpeaking] = useState(false);
   useEffect(() => {
@@ -61,8 +62,11 @@ useEffect(() => {
   }, [stream]);
 
   return (
-    <div className={`relative bg-black/80 rounded-xl overflow-hidden aspect-video group transition-all duration-300 ${isScreenShare ? 'col-span-full aspect-auto h-64' : ''} ${isSpeaking ? 'border-2 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.6)]' : 'border border-white/10 shadow-xl'}`}>
-      <video ref={videoRef} autoPlay playsInline muted={muted} className={`w-full h-full ${isScreenShare ? 'object-contain bg-black' : 'object-cover'}`} />
+    <div 
+      onDoubleClick={onDoubleClick}
+      title={onDoubleClick ? "Double-click to expand" : undefined}
+      className={`relative bg-black/80 rounded-xl overflow-hidden group transition-all duration-300 ${onDoubleClick ? 'cursor-pointer' : ''} ${isFullscreen ? 'w-full h-full' : (isScreenShare ? 'col-span-full aspect-auto h-64' : 'aspect-video')} ${isSpeaking ? 'border-2 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.6)]' : 'border border-white/10 shadow-xl'}`}>
+      <video ref={videoRef} autoPlay playsInline muted={muted} className={`w-full h-full ${isScreenShare || isFullscreen ? 'object-contain bg-black' : 'object-cover'}`} />
       <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 backdrop-blur rounded flex items-center gap-2 text-[10px] text-white font-bold tracking-wider uppercase">
         {isScreenShare && <Monitor size={10} className="text-teal-400" />} {label}
       </div>
@@ -106,7 +110,19 @@ export default function WarRoomChat({ project, user }) {
   const [remoteStreams, setRemoteStreams] = useState({});
   const localStreamRef = useRef(null);
   const peerConnections = useRef({});
-const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isVideoOff, setIsVideoOff] = useState(false);
+  const [fullscreenVideo, setFullscreenVideo] = useState(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && fullscreenVideo) {
+        setFullscreenVideo(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [fullscreenVideo]);
 
   const toggleMute = () => {
     if (localStreamRef.current) {
@@ -114,6 +130,16 @@ const [isMuted, setIsMuted] = useState(false);
         if (audioTracks.length > 0) {
             audioTracks[0].enabled = !audioTracks[0].enabled;
             setIsMuted(!audioTracks[0].enabled);
+        }
+    }
+  };
+
+  const toggleVideo = () => {
+    if (localStreamRef.current) {
+        const videoTracks = localStreamRef.current.getVideoTracks();
+        if (videoTracks.length > 0) {
+            videoTracks[0].enabled = !videoTracks[0].enabled;
+            setIsVideoOff(!videoTracks[0].enabled);
         }
     }
   };
@@ -706,7 +732,7 @@ const [isMuted, setIsMuted] = useState(false);
         <div className="p-4 bg-gradient-to-r from-teal-500/10 to-indigo-500/10 border-b border-white/5 flex flex-col gap-3 z-10 relative">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-              <Terminal size={16} className="text-indigo-400" /> WebRTC Comms
+              <Terminal size={16} className="text-indigo-400" /> Video Conferencing
             </h3>
             {isLeader && (
               <div className="flex gap-2">
@@ -746,6 +772,13 @@ const [isMuted, setIsMuted] = useState(false);
                 >
                   {isMuted ? <MicOff size={14} /> : <Mic size={14} />}
                 </button>
+                <button 
+                  onClick={toggleVideo} 
+                  className={`flex items-center justify-center gap-2 px-3 py-2 ${isVideoOff ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30 border border-red-500/50' : 'bg-slate-700/50 text-white hover:bg-slate-700 border border-slate-600/50'} text-xs font-bold rounded-lg transition-all`}
+                  title={isVideoOff ? "Turn Camera On" : "Turn Camera Off"}
+                >
+                  {isVideoOff ? <VideoOff size={14} /> : <Video size={14} />}
+                </button>
                 {!isScreenSharing ? (
                   <button onClick={shareScreen} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold rounded-lg transition-all">
                     <Monitor size={14} /> Present Screen
@@ -767,11 +800,11 @@ const [isMuted, setIsMuted] = useState(false);
           {inCall && (
             <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="border-b border-white/5 bg-black/60 overflow-y-auto max-h-[300px] scrollbar-thin">
               <div className="p-3 grid grid-cols-2 gap-3 auto-rows-max">
-                {localStream && <VideoPlayer stream={localStream} muted={true} isScreenShare={isScreenSharing} label={`${user.display_name} (Me)`} />}
+                {localStream && <VideoPlayer stream={localStream} muted={true} isScreenShare={isScreenSharing} label={`${user.display_name} (Me)`} onDoubleClick={() => setFullscreenVideo({ stream: localStream, label: `${user.display_name} (Me)`, isScreenShare: isScreenSharing })} />}
                 {Object.entries(remoteStreams).map(([uid, stream]) => {
                   const memberInfo = project?.members_info?.find(m => m.uid === uid);
                   const displayName = memberInfo ? memberInfo.name : `Peer ${uid.slice(0, 4)}`;
-                  return <VideoPlayer key={uid} stream={stream} muted={false} label={displayName} />;
+                  return <VideoPlayer key={uid} stream={stream} muted={false} label={displayName} onDoubleClick={() => setFullscreenVideo({ stream, label: displayName, isScreenShare: false })} />;
                 })}
               </div>
             </motion.div>
@@ -804,6 +837,124 @@ const [isMuted, setIsMuted] = useState(false);
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {fullscreenVideo && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }} 
+            animate={{ opacity: 1, scale: 1 }} 
+            exit={{ opacity: 0, scale: 0.95 }} 
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 md:p-8"
+            onClick={() => setFullscreenVideo(null)}
+          >
+            <button 
+              onClick={(e) => { e.stopPropagation(); setFullscreenVideo(null); }} 
+              className="absolute top-4 right-4 md:top-6 md:right-6 p-3 bg-white/10 border border-white/20 hover:bg-red-500/80 hover:border-red-500 text-white rounded-2xl transition-all z-[1001] shadow-2xl"
+              title="Close Fullscreen (Esc)"
+            >
+              <X size={24} />
+            </button>
+            <div 
+              className="w-full h-full max-w-[90vw] max-h-[90vh] relative flex flex-col items-center justify-center cursor-default gap-4"
+              onClick={e => e.stopPropagation()}
+              onDoubleClick={() => setFullscreenVideo(null)}
+            >
+              <div 
+                className="w-full h-full ring-1 ring-white/10 rounded-2xl overflow-hidden shadow-2xl bg-black flex-1"
+                title="Double-click to close"
+              >
+                <VideoPlayer 
+                  stream={fullscreenVideo.stream} 
+                  muted={false} 
+                  label={fullscreenVideo.label} 
+                  isScreenShare={fullscreenVideo.isScreenShare}
+                  isFullscreen={true}
+                />
+              </div>
+
+              {/* Thumbnail Strip of other participants */}
+              {inCall && (
+                <div 
+                  className="flex gap-3 overflow-x-auto max-w-full px-2 py-1 shrink-0 scrollbar-hide" 
+                  onClick={(e) => e.stopPropagation()} 
+                  onDoubleClick={(e) => e.stopPropagation()}
+                >
+                  {localStream && localStream !== fullscreenVideo.stream && (
+                    <div 
+                      className="w-48 h-32 shrink-0 rounded-xl overflow-hidden ring-1 ring-white/20 cursor-pointer hover:ring-teal-500 transition-all shadow-lg"
+                      onClick={() => setFullscreenVideo({ stream: localStream, label: `${user.display_name} (Me)`, isScreenShare: isScreenSharing })}
+                    >
+                      <VideoPlayer stream={localStream} muted={true} label={`${user.display_name} (Me)`} isScreenShare={isScreenSharing} isFullscreen={true} />
+                    </div>
+                  )}
+
+                  {Object.entries(remoteStreams).map(([uid, stream]) => {
+                    if (stream === fullscreenVideo.stream) return null;
+                    const memberInfo = project?.members_info?.find(m => m.uid === uid);
+                    const displayName = memberInfo ? memberInfo.name : `Peer ${uid.slice(0, 4)}`;
+                    
+                    return (
+                      <div 
+                        key={uid}
+                        className="w-48 h-32 shrink-0 rounded-xl overflow-hidden ring-1 ring-white/20 cursor-pointer hover:ring-teal-500 transition-all shadow-lg"
+                        onClick={() => setFullscreenVideo({ stream, label: displayName, isScreenShare: false })}
+                      >
+                        <VideoPlayer stream={stream} muted={false} label={displayName} isScreenShare={false} isFullscreen={true} />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Call Controls inside Fullscreen overlay */}
+              {inCall && (
+                <div 
+                  className="flex items-center gap-4 bg-[#1e1e1e]/80 border border-white/10 backdrop-blur-xl px-6 py-4 rounded-3xl shadow-2xl z-[1010]" 
+                  onClick={e => e.stopPropagation()}
+                  onDoubleClick={e => e.stopPropagation()}
+                >
+                  <button 
+                    onClick={toggleMute} 
+                    className={`flex items-center justify-center w-12 h-12 rounded-full ${isMuted ? 'bg-red-500/20 text-red-500 border border-red-500/50 hover:bg-red-500/30' : 'bg-slate-700/50 text-white border border-slate-600/50 hover:bg-slate-700'} transition-all`}
+                    title={isMuted ? "Unmute" : "Mute"}
+                  >
+                    {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
+                  </button>
+                  <button 
+                    onClick={toggleVideo} 
+                    className={`flex items-center justify-center w-12 h-12 rounded-full ${isVideoOff ? 'bg-red-500/20 text-red-500 border border-red-500/50 hover:bg-red-500/30' : 'bg-slate-700/50 text-white border border-slate-600/50 hover:bg-slate-700'} transition-all`}
+                    title={isVideoOff ? "Turn Camera On" : "Turn Camera Off"}
+                  >
+                    {isVideoOff ? <VideoOff size={20} /> : <Video size={20} />}
+                  </button>
+                  
+                  {!isScreenSharing ? (
+                    <button onClick={shareScreen} className="flex items-center justify-center gap-2 px-6 py-3 bg-teal-600 hover:bg-teal-500 text-white text-sm font-bold rounded-2xl transition-all shadow-lg shadow-teal-500/20">
+                      <Monitor size={18} /> Present Screen
+                    </button>
+                  ) : (
+                    <button onClick={stopScreenShare} className="flex items-center justify-center gap-2 px-6 py-3 bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold rounded-2xl transition-all shadow-lg shadow-amber-500/20">
+                      <Video size={18} /> Back to Camera
+                    </button>
+                  )}
+
+                  <button 
+                    onClick={() => {
+                      leaveHuddle();
+                      setFullscreenVideo(null);
+                    }} 
+                    className="flex items-center justify-center w-12 h-12 bg-red-500 hover:bg-red-600 text-white rounded-full transition-all shadow-lg shadow-red-500/20"
+                    title="Leave Call"
+                  >
+                    <PhoneOff size={20} />
+                  </button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
