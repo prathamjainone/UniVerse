@@ -1,23 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { 
-  Users, MessageSquare, ArrowLeft, Sparkles, 
+import {
+  Users, MessageSquare, ArrowLeft, Sparkles,
   Send, Mail, Trash2, Github, ExternalLink, X, Star, BookOpen, Code, BarChart3
 } from 'lucide-react';
-import { 
-  Radar, RadarChart, PolarGrid, PolarAngleAxis, 
-  Radar as RadarComponent, ResponsiveContainer 
+import {
+  Radar, RadarChart, PolarGrid, PolarAngleAxis,
+  Radar as RadarComponent, ResponsiveContainer
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import API_URL from '../api';
 import WarRoomChat from '../components/WarRoomChat';
+import ContributionTracker from '../components/ContributionTracker';
 
 export default function ProjectDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, login } = useAuth();
-  
+
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [commentText, setCommentText] = useState("");
@@ -63,10 +64,10 @@ export default function ProjectDetails() {
       const res = await fetch(`${API_URL}/api/projects/${id}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          user_id: user.uid, 
-          user_name: user.display_name, 
-          text: commentText 
+        body: JSON.stringify({
+          user_id: user.uid,
+          user_name: user.display_name,
+          text: commentText
         })
       });
       if (res.ok) {
@@ -101,7 +102,7 @@ export default function ProjectDetails() {
     try {
       const res = await fetch(`${API_URL}/api/projects/${id}`, { method: 'DELETE' });
       if (res.ok) navigate('/discover');
-    } catch(err) {
+    } catch (err) {
       console.error("Failed to delete project", err);
     }
   };
@@ -150,7 +151,7 @@ export default function ProjectDetails() {
     try {
       const res = await fetch(`${API_URL}/api/projects/${id}/members/${memberUid}`, { method: 'DELETE' });
       if (res.ok) fetchProject();
-    } catch(err) {
+    } catch (err) {
       console.error("Failed to remove member", err);
     }
   };
@@ -179,8 +180,8 @@ export default function ProjectDetails() {
       const totalStars = reposData.reduce((sum, r) => sum + (r.stargazers_count || 0), 0);
       const languages = {};
       reposData.forEach(r => { if (r.language) languages[r.language] = (languages[r.language] || 0) + 1; });
-      const topLangs = Object.entries(languages).sort((a,b) => b[1] - a[1]).slice(0, 8);
-      const topRepos = reposData.filter(r => !r.fork).sort((a,b) => (b.stargazers_count || 0) - (a.stargazers_count || 0)).slice(0, 5);
+      const topLangs = Object.entries(languages).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      const topRepos = reposData.filter(r => !r.fork).sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0)).slice(0, 5);
 
       setIntelData({
         avatar: userData.avatar_url,
@@ -218,7 +219,7 @@ export default function ProjectDetails() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
+
       {/* Back Navigation */}
       <Link to="/discover" className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors group">
         <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
@@ -226,23 +227,23 @@ export default function ProjectDetails() {
       </Link>
 
       <div className="grid lg:grid-cols-3 gap-8">
-        
+
         {/* LEFT COLUMN: Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          
+
           {/* Project Content Card */}
           <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative">
-             <div className="absolute top-0 right-0 p-4">
-                {user && project.owner_uid === user.uid && (
-                  <button onClick={handleDelete} className="p-2 text-slate-500 hover:text-red-400 transition-colors">
-                    <Trash2 size={20} />
-                  </button>
-                )}
-             </div>
+            <div className="absolute top-0 right-0 p-4">
+              {user && project.owner_uid === user.uid && (
+                <button onClick={handleDelete} className="p-2 text-slate-500 hover:text-red-400 transition-colors">
+                  <Trash2 size={20} />
+                </button>
+              )}
+            </div>
 
             <div className="p-6 md:p-8">
               <div className="flex items-center gap-3 mb-6">
-                 <div className="px-3 py-1 rounded-full bg-teal-500/10 text-teal-400 text-xs font-bold border border-teal-500/20 uppercase tracking-wider">
+                <div className="px-3 py-1 rounded-full bg-teal-500/10 text-teal-400 text-xs font-bold border border-teal-500/20 uppercase tracking-wider">
                   Open Project
                 </div>
                 <span className="text-slate-500 text-xs">• Posted {new Date(project.created_at).toLocaleDateString()}</span>
@@ -251,7 +252,7 @@ export default function ProjectDetails() {
               <h1 className="text-3xl md:text-4xl font-black text-white mb-4 leading-tight">
                 {project.title}
               </h1>
-              
+
               <div className="prose prose-invert max-w-none mb-8 text-slate-300 leading-relaxed text-lg">
                 {project.description}
               </div>
@@ -271,25 +272,33 @@ export default function ProjectDetails() {
 
           {/* TAB SYSTEM */}
           <div className="flex gap-2 p-1 bg-white/[0.03] border border-white/10 rounded-xl w-fit">
-            <button 
+            <button
               onClick={() => setActiveTab("discussion")}
               className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'discussion' ? 'bg-teal-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
             >
               Discussion
             </button>
             {isMember && (
-              <button 
+              <button
                 onClick={() => setActiveTab("warroom")}
                 className={`px-6 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'warroom' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
               >
                 Team War Room <Sparkles size={14} />
               </button>
             )}
+            {isMember && (
+              <button
+                onClick={() => setActiveTab("contributions")}
+                className={`px-6 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'contributions' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                Contributions <BarChart3 size={14} />
+              </button>
+            )}
           </div>
 
           <AnimatePresence mode="wait">
             {activeTab === 'discussion' ? (
-              <motion.div 
+              <motion.div
                 key="discussion"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -303,7 +312,7 @@ export default function ProjectDetails() {
 
                 {/* Comment Box */}
                 <div className="mb-8">
-                  <textarea 
+                  <textarea
                     placeholder={user ? "What are your thoughts?" : "Sign in to join the conversation..."}
                     value={commentText}
                     onChange={e => setCommentText(e.target.value)}
@@ -311,7 +320,7 @@ export default function ProjectDetails() {
                     disabled={!user}
                   />
                   <div className="flex justify-end mt-3">
-                    <button 
+                    <button
                       onClick={handleAddComment}
                       disabled={!user || !commentText.trim()}
                       className="bg-teal-600 hover:bg-teal-500 disabled:bg-slate-800 disabled:text-slate-500 text-white px-6 py-2.5 rounded-full text-sm font-bold transition-all shadow-lg overflow-hidden relative group"
@@ -351,8 +360,8 @@ export default function ProjectDetails() {
                   )}
                 </div>
               </motion.div>
-            ) : (
-              <motion.div 
+            ) : activeTab === 'warroom' ? (
+              <motion.div
                 key="warroom"
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -360,17 +369,26 @@ export default function ProjectDetails() {
               >
                 <WarRoomChat project={project} user={user} />
               </motion.div>
+            ) : (
+              <motion.div
+                key="contributions"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+              >
+                <ContributionTracker projectId={id} isOwner={user && project.owner_uid === user.uid} />
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
 
         {/* RIGHT COLUMN: Sidebar */}
         <div className="space-y-6">
-          
+
           {/* AI Match Card */}
           <div className="bg-gradient-to-br from-purple-600/10 to-blue-600/10 border border-purple-500/20 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
             <div className="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/10 rounded-full blur-3xl group-hover:bg-purple-500/20 transition-all"></div>
-            
+
             <h4 className="text-sm font-black text-purple-300 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
               <Sparkles size={16} /> AI Match Readiness
             </h4>
@@ -399,13 +417,13 @@ export default function ProjectDetails() {
                   <span className="text-2xl font-black text-purple-400">{matchResult.score}%</span>
                 </div>
                 <p className="text-xs text-slate-300 italic leading-relaxed text-center">
-                   "{matchResult.reason}"
+                  "{matchResult.reason}"
                 </p>
               </div>
             ) : (
               <div className="py-6 text-center">
                 <p className="text-slate-400 text-xs mb-4">See how your skills stack up against this project's requirements.</p>
-                <button 
+                <button
                   onClick={handleMatch}
                   disabled={isMatching}
                   className="w-full bg-purple-600 hover:bg-purple-500 disabled:bg-purple-900 text-white font-bold py-3 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
@@ -418,68 +436,67 @@ export default function ProjectDetails() {
 
           {/* Team Members Card */}
           <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 shadow-xl">
-             <div className="flex items-center justify-between mb-6">
-                <h4 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-                  <Users size={16} className="text-teal-400" /> Current Team
-                </h4>
-                <span className="px-2 py-0.5 bg-teal-500/10 text-teal-400 text-[10px] font-bold rounded-lg border border-teal-500/20">
-                  {project.members_info?.length || 0} Members
-                </span>
-             </div>
+            <div className="flex items-center justify-between mb-6">
+              <h4 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                <Users size={16} className="text-teal-400" /> Current Team
+              </h4>
+              <span className="px-2 py-0.5 bg-teal-500/10 text-teal-400 text-[10px] font-bold rounded-lg border border-teal-500/20">
+                {project.members_info?.length || 0} Members
+              </span>
+            </div>
 
-             <div className="space-y-4">
-                {project.members_info?.map((m) => (
-                  <div key={m.uid} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/5 group">
-                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-300">
-                      {m.name.charAt(0)}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-bold text-white leading-none mb-1">{m.name} {m.uid === project.owner_uid && <span className="text-[10px] text-teal-500 font-black ml-1">OWNER</span>}</p>
-                      <p className="text-[10px] text-slate-500 truncate">{m.branch || 'University Student'}</p>
-                    </div>
-                    {user && project.owner_uid === user.uid && m.github && (
-                      <button onClick={() => openGithubIntel(m)} className="text-emerald-500/40 hover:text-emerald-400 transition-colors group-hover:scale-110 ml-1" title="GitHub Intel">
-                        <Github size={14} />
-                      </button>
-                    )}
-                    {user && project.owner_uid === user.uid && m.uid !== project.owner_uid && (
-                      <button onClick={() => handleRemoveMember(m.uid)} className="text-red-500/50 hover:text-red-400 transition-colors group-hover:scale-110 ml-1" title="Remove Member">
-                        <Trash2 size={14} />
-                      </button>
-                    )}
-                    <button className="text-slate-600 hover:text-white transition-colors group-hover:scale-110 ml-1">
-                      <Mail size={14} />
-                    </button>
+            <div className="space-y-4">
+              {project.members_info?.map((m) => (
+                <div key={m.uid} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/5 group">
+                  <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-300">
+                    {m.name.charAt(0)}
                   </div>
-                ))}
-             </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-white leading-none mb-1">{m.name} {m.uid === project.owner_uid && <span className="text-[10px] text-teal-500 font-black ml-1">OWNER</span>}</p>
+                    <p className="text-[10px] text-slate-500 truncate">{m.branch || 'University Student'}</p>
+                  </div>
+                  {user && project.owner_uid === user.uid && m.github && (
+                    <button onClick={() => openGithubIntel(m)} className="text-emerald-500/40 hover:text-emerald-400 transition-colors group-hover:scale-110 ml-1" title="GitHub Intel">
+                      <Github size={14} />
+                    </button>
+                  )}
+                  {user && project.owner_uid === user.uid && m.uid !== project.owner_uid && (
+                    <button onClick={() => handleRemoveMember(m.uid)} className="text-red-500/50 hover:text-red-400 transition-colors group-hover:scale-110 ml-1" title="Remove Member">
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                  <button className="text-slate-600 hover:text-white transition-colors group-hover:scale-110 ml-1">
+                    <Mail size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
 
-             {user && project.owner_uid !== user.uid && (
-               <button 
-                 onClick={handleJoin}
-                 className={`w-full mt-6 font-bold py-3.5 rounded-xl transition-all shadow-lg active:scale-[0.98] ${
-                   isMember 
-                    ? 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20' 
+            {user && project.owner_uid !== user.uid && (
+              <button
+                onClick={handleJoin}
+                className={`w-full mt-6 font-bold py-3.5 rounded-xl transition-all shadow-lg active:scale-[0.98] ${isMember
+                    ? 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20'
                     : isRequested
-                    ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/20'
-                    : 'bg-teal-600 hover:bg-teal-500 text-white shadow-teal-500/10'
-                 }`}
-               >
-                 {isMember ? 'Leave Team' : isRequested ? 'Request Pending (Click to Cancel)' : 'Request to Join'}
-               </button>
-             )}
-             {!user && (
-               <button onClick={login} className="w-full mt-6 bg-teal-600 hover:bg-teal-500 text-white font-bold py-3.5 rounded-xl transition-all">
-                 Sign in to Join
-               </button>
-             )}
+                      ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/20'
+                      : 'bg-teal-600 hover:bg-teal-500 text-white shadow-teal-500/10'
+                  }`}
+              >
+                {isMember ? 'Leave Team' : isRequested ? 'Request Pending (Click to Cancel)' : 'Request to Join'}
+              </button>
+            )}
+            {!user && (
+              <button onClick={login} className="w-full mt-6 bg-teal-600 hover:bg-teal-500 text-white font-bold py-3.5 rounded-xl transition-all">
+                Sign in to Join
+              </button>
+            )}
           </div>
 
           {/* Pending Applications - ONLY VISIBLE TO LEADER */}
           {user && project.owner_uid === user.uid && project.join_requests_info?.length > 0 && (
             <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/5 border border-yellow-500/20 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
               <div className="absolute -right-4 -top-4 w-24 h-24 bg-yellow-500/10 rounded-full blur-3xl group-hover:bg-yellow-500/20 transition-all"></div>
-              
+
               <h4 className="text-sm font-black text-yellow-500 uppercase tracking-widest flex items-center gap-2 mb-6">
                 Pending Applications ({project.join_requests_info.length})
               </h4>
@@ -501,10 +518,10 @@ export default function ProjectDetails() {
                         </button>
                       )}
                     </div>
-                    
+
                     {req.skills && req.skills.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-4">
-                        {req.skills.slice(0,3).map(s => (
+                        {req.skills.slice(0, 3).map(s => (
                           <span key={s} className="px-2 py-0.5 bg-white/5 text-[10px] text-slate-400 rounded-md border border-white/5">{s}</span>
                         ))}
                         {req.skills.length > 3 && <span className="text-[10px] text-slate-500 pl-1">+{req.skills.length - 3}</span>}
@@ -512,12 +529,12 @@ export default function ProjectDetails() {
                     )}
 
                     <div className="flex gap-2">
-                       <button onClick={() => handleAccept(req.uid)} className="flex-1 bg-teal-500/20 hover:bg-teal-500/30 text-teal-400 text-xs font-bold py-2 rounded-lg border border-teal-500/20 transition-colors">
-                         Accept
-                       </button>
-                       <button onClick={() => handleReject(req.uid)} className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold py-2 rounded-lg border border-red-500/20 transition-colors">
-                         Decline
-                       </button>
+                      <button onClick={() => handleAccept(req.uid)} className="flex-1 bg-teal-500/20 hover:bg-teal-500/30 text-teal-400 text-xs font-bold py-2 rounded-lg border border-teal-500/20 transition-colors">
+                        Accept
+                      </button>
+                      <button onClick={() => handleReject(req.uid)} className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold py-2 rounded-lg border border-red-500/20 transition-colors">
+                        Decline
+                      </button>
                     </div>
                   </div>
                 ))}
