@@ -79,7 +79,7 @@ export default function Home() {
          setActiveReply(null);
          fetchPosts();
       }
-    } catch(err) {
+    } catch (err) {
       console.error("Failed to add comment", err);
     }
   };
@@ -89,7 +89,7 @@ export default function Home() {
     try {
       const res = await fetch(`${API_URL}/api/community/${postId}`, { method: 'DELETE' });
       if (res.ok) fetchPosts();
-    } catch(err) {
+    } catch (err) {
       console.error("Failed to delete post", err);
     }
   };
@@ -212,7 +212,7 @@ export default function Home() {
                     type="text"
                     placeholder={user ? "Type your thoughtful reply..." : "Sign in to reply..."}
                     value={replyTexts[post.id] || ""}
-                    onChange={e => setReplyTexts({...replyTexts, [post.id]: e.target.value})}
+                     onChange={e => setReplyTexts({ ...replyTexts, [post.id]: e.target.value })}
                     onKeyDown={e => e.key === 'Enter' && handleAddComment(post.id)}
                     disabled={!user}
                     className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors disabled:opacity-50"
@@ -224,7 +224,8 @@ export default function Home() {
               )}
             </div>
           </div>
-        )})}
+        )
+        })}
         {posts.length === 0 && <div className="text-center text-slate-500 py-10 border border-dashed border-white/10 rounded-2xl">No posts yet! Be the first to start a discussion.</div>}
       </div>
     </div>
