@@ -26,6 +26,7 @@ const Discussion = lazy(() => import('./pages/project/Discussion'));
 const WarRoom = lazy(() => import('./pages/project/WarRoom'));
 const Contributions = lazy(() => import('./pages/project/Contributions'));
 const Members = lazy(() => import('./pages/project/Members'));
+const CompatibilityExam = lazy(() => import('./pages/CompatibilityExam'));
 
 function PageFallback() {
   return (
@@ -66,6 +67,7 @@ function AnimatedRoutes() {
           <Route path="contributions" element={<Contributions />} />
           <Route path="members" element={<Members />} />
         </Route>
+        <Route path="/compatibility-exam" element={<Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><CompatibilityExam /></motion.div></Suspense>} />
         <Route path="/profile" element={
           <OnboardingGuard><Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><Profile /></motion.div></Suspense></OnboardingGuard>
         } />
