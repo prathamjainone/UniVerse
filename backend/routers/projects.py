@@ -366,18 +366,31 @@ def notify_meeting(project_id: str, background_tasks: BackgroundTasks):
     from database import get_document
     proj = get_document('projects', project_id)
     if not proj:
+        print(f"[Notify] Project not found: {project_id}")
         return {"success": False, "error": "Project not found"}
         
     members = proj.get("members", [])
     members_notified = 0
+    print(f"\n[Notify] Starting notification for meeting: {proj.get('title')} (Project ID: {project_id})")
+    print(f"[Notify] Scanning {len(members)} total members...")
+
     for member_id in members:
-        if member_id == proj.get("owner_uid"):
-            continue
         req_user = get_document('users', member_id)
-        if req_user and req_user.get("email"):
-            subject = f"War Room Active: {proj.get('title', 'Project')}"
-            body = f"The Team Lead has joined the War Room (Video Call) for project: {proj.get('title', 'Project')}. Please join the meeting!"
-            background_tasks.add_task(send_email_notification, req_user.get("email"), subject, body)
-            members_notified += 1
+        if not req_user:
+            print(f"[Notify] ❌ User document not found for ID: {member_id}")
+            continue
             
+        email = req_user.get("email")
+        if not email:
+            print(f"[Notify] ❌ User {req_user.get('display_name', 'Unknown')} has no email address. Skipping.")
+            continue
+            
+        subject = f"War Room Active: {proj.get('title', 'Project')}"
+        body = f"The Team Lead has joined the War Room (Video Call) for project: {proj.get('title', 'Project')}. Please join the meeting!"
+        
+        print(f"[Notify] ✅ Queued email to: {email} (User: {req_user.get('display_name')})")
+        background_tasks.add_task(send_email_notification, email, subject, body)
+        members_notified += 1
+            
+    print(f"[Notify] Finished. Queued {members_notified} emails.\n")
     return {"success": True, "members_notified": members_notified}
