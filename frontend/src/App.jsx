@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
 import Home from './pages/Home';
+import Community from './pages/Community';
 import Discover from './pages/Discover';
 import Onboarding from './pages/Onboarding';
 import Profile from './pages/Profile';
@@ -44,7 +45,7 @@ function AnimatedRoutes() {
         {/* Public routes — no guard */}
         <Route path="/" element={<motion.div {...pageVariants}><Landing /></motion.div>} />
         <Route path="/discover" element={<motion.div {...pageVariants}><Discover /></motion.div>} />
-        <Route path="/community" element={<motion.div {...pageVariants}><Home /></motion.div>} />
+        <Route path="/community" element={<motion.div {...pageVariants}><Community /></motion.div>} />
         <Route path="/onboarding" element={<motion.div {...pageVariants}><Onboarding /></motion.div>} />
         <Route path="/projects/:id" element={<motion.div {...pageVariants}><ProjectDetails /></motion.div>} />
         

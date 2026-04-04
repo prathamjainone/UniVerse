@@ -29,10 +29,12 @@ class PostBase(BaseModel):
     id: Optional[str] = None
     author_uid: str
     author_name: str
+    author_avatar: Optional[str] = None
     title: str
     content: str
     tags: List[str] = []
     upvotes: int = 0
     upvoted_by: List[str] = []
+    downvoted_by: List[str] = []
     comments: List[dict] = []
     created_at: datetime = Field(default_factory=datetime.utcnow)

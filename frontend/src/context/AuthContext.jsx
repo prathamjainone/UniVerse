@@ -146,11 +146,17 @@ export function AuthProvider({ children }) {
   };
 
   const updateUser = (partialUpdate) => {
-    setUser(prev => ({
-      ...prev,
-      ...partialUpdate,
-      avatar: (partialUpdate.display_name || prev.display_name)?.charAt(0) || prev.avatar
-    }));
+    setUser(prev => {
+      const newUser = {
+        ...prev,
+        ...partialUpdate,
+        avatar: (partialUpdate.display_name || prev.display_name)?.charAt(0) || prev.avatar
+      };
+      if (!auth) {
+        localStorage.setItem('universe_user', JSON.stringify(newUser));
+      }
+      return newUser;
+    });
   };
 
   return (

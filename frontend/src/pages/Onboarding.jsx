@@ -78,7 +78,7 @@ export default function Onboarding() {
       if (res.ok) {
         // Push skills into context so matchmaking works without reload
         updateUser({ skills, ...formData, has_profile: true });
-        window.location.href = '/discover';
+        navigate('/discover');
       }
     } catch (err) {
       console.error("Failed to save profile", err);
