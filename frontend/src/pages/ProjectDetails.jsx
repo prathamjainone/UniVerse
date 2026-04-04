@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Users, MessageSquare, ArrowLeft, Sparkles,
   Send, Mail, Trash2, Github, ExternalLink, X, Star, BookOpen, Code, BarChart3
@@ -19,6 +19,7 @@ import ContributionTracker from '../components/ContributionTracker';
 export default function ProjectDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, login, onlineUsers = [] } = useAuth();
 
   const [project, setProject] = useState(null);
@@ -27,7 +28,9 @@ export default function ProjectDetails() {
   const [matchResult, setMatchResult] = useState(null);
   const [isMatching, setIsMatching] = useState(false);
 
-  const [activeTab, setActiveTab] = useState("discussion"); // discussion or warroom
+  // URL-based tab state
+  const activeTab = searchParams.get('tab') || "discussion";
+  const setActiveTab = (tab) => setSearchParams({ tab });
 
   // --- GitHub Intel Modal State ---
   const [intelModal, setIntelModal] = useState(null); // { name, github, ... } or null

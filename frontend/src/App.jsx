@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { WarRoomProvider } from './context/WarRoomContext';
+import MiniCallOverlay from './components/MiniCallOverlay';
 import { useLocation, Navigate } from 'react-router-dom';
 import { useEffect, lazy, Suspense } from 'react';
 import Lenis from 'lenis';
@@ -109,6 +111,7 @@ export default function App() {
   return (
     <AuthProvider>
       <Router>
+        <WarRoomProvider>
         <div className="min-h-screen bg-dark-bg text-slate-100 font-sans relative overflow-x-hidden">
           {/* 3D Cosmic particle background — lazy loaded with CSS fallback */}
           <CosmicFallback />
@@ -135,7 +138,11 @@ export default function App() {
               </div>
             </main>
           </div>
+
+          {/* Persistent floating call overlay */}
+          <MiniCallOverlay />
         </div>
+        </WarRoomProvider>
       </Router>
     </AuthProvider>
   );
