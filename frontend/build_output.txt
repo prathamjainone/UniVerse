@@ -1,0 +1,68 @@
+﻿[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 2971 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mregisterSW.js                        [39m[1m[2m  0.13 kB[22m[1m[22m
+[2mdist/[22m[32mmanifest.webmanifest                 [39m[1m[2m  0.50 kB[22m[1m[22m
+[2mdist/[22m[32mindex.html                           [39m[1m[2m  0.88 kB[22m[1m[22m[2m Γöé gzip:   0.46 kB[22m
+[2mdist/[22m[35massets/index-C3PG-7F_.css            [39m[1m[2m 99.07 kB[22m[1m[22m[2m Γöé gzip:  15.07 kB[22m
+[2mdist/[22m[36massets/chevron-down-BCg750CM.js      [39m[1m[2m  0.30 kB[22m[1m[22m[2m Γöé gzip:   0.25 kB[22m
+[2mdist/[22m[36massets/plus-CnEutkQF.js              [39m[1m[2m  0.33 kB[22m[1m[22m[2m Γöé gzip:   0.25 kB[22m
+[2mdist/[22m[36massets/log-in-B96D_iPR.js            [39m[1m[2m  0.40 kB[22m[1m[22m[2m Γöé gzip:   0.29 kB[22m
+[2mdist/[22m[36massets/trash-2-DrkLvh5r.js           [39m[1m[2m  0.50 kB[22m[1m[22m[2m Γöé gzip:   0.32 kB[22m
+[2mdist/[22m[36massets/github-DNKZTgah.js            [39m[1m[2m  0.58 kB[22m[1m[22m[2m Γöé gzip:   0.40 kB[22m
+[2mdist/[22m[36massets/star-CH090nL_.js              [39m[1m[2m  0.65 kB[22m[1m[22m[2m Γöé gzip:   0.40 kB[22m
+[2mdist/[22m[36massets/sparkles-CZeskoZv.js          [39m[1m[2m  0.67 kB[22m[1m[22m[2m Γöé gzip:   0.39 kB[22m
+[2mdist/[22m[36massets/zap-ztoF0rbb.js               [39m[1m[2m  0.83 kB[22m[1m[22m[2m Γöé gzip:   0.43 kB[22m
+[2mdist/[22m[36massets/graduation-cap-Dh1hM-yU.js    [39m[1m[2m  0.85 kB[22m[1m[22m[2m Γöé gzip:   0.45 kB[22m
+[2mdist/[22m[36massets/trending-up-BMLvqard.js       [39m[1m[2m  1.12 kB[22m[1m[22m[2m Γöé gzip:   0.49 kB[22m
+[2mdist/[22m[36massets/with-selector-CLVBoCux.js     [39m[1m[2m  2.18 kB[22m[1m[22m[2m Γöé gzip:   0.95 kB[22m
+[2mdist/[22m[36massets/GlowCard-Ctxusi1S.js          [39m[1m[2m  2.42 kB[22m[1m[22m[2m Γöé gzip:   1.19 kB[22m
+[2mdist/[22m[36massets/Onboarding-D4pBC4qj.js        [39m[1m[2m  7.13 kB[22m[1m[22m[2m Γöé gzip:   2.37 kB[22m
+[2mdist/[22m[36massets/Profile-Bz3MD_6_.js           [39m[1m[2m  8.09 kB[22m[1m[22m[2m Γöé gzip:   2.64 kB[22m
+npx : [33m
+At line:1 char:1
++ npx vite build 2>&1 | 
+Out-File -FilePath 
+build_output.txt 
+-Encoding u ...
++ ~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (  
+  [33m:String) [], Remo   
+ teException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+(!) Some chunks are 
+larger than 500 kB after 
+minification. Consider:
+- Using dynamic import() 
+to code-split the 
+application
+- Use build.rollupOptions.
+output.manualChunks to 
+improve chunking: https://
+rollupjs.org/configuration
+-options/#output-manualchu
+nks
+- Adjust chunk size limit 
+for this warning via build
+.chunkSizeWarningLimit.[3
+9m
+[2mdist/[22m[36massets/Landing-BGqiyyMD.js           [39m[1m[2m 15.58 kB[22m[1m[22m[2m Γöé gzip:   4.74 kB[22m
+[2mdist/[22m[36massets/Discover-CATPP39h.js          [39m[1m[2m 15.75 kB[22m[1m[22m[2m Γöé gzip:   5.13 kB[22m
+[2mdist/[22m[36massets/Community-BaKbT8cP.js         [39m[1m[2m 21.50 kB[22m[1m[22m[2m Γöé gzip:   6.02 kB[22m
+[2mdist/[22m[36massets/ProjectDetails-CgXVD5V3.js    [39m[1m[2m340.09 kB[22m[1m[22m[2m Γöé gzip: 100.75 kB[22m
+[2mdist/[22m[36massets/index-CoRr7NkY.js             [39m[1m[33m761.45 kB[39m[22m[2m Γöé gzip: 220.15 kB[22m
+[2mdist/[22m[36massets/CosmicBackground-BWtydYMD.js  [39m[1m[33m885.62 kB[39m[22m[2m Γöé gzip: 238.84 kB[22m
+[32mΓ£ô built in 6.37s[39m
+
+PWA v1.2.0
+mode      generateSW
+precache  24 entries (2115.42 KiB)
+files generated
+  dist/sw.js
+  dist/workbox-8c29f6e4.js

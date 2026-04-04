@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import API_URL from '../api';
 import { useAuth } from '../context/AuthContext';
 import CreateProjectModal from '../components/CreateProjectModal';
+import GlowCard from '../components/GlowCard';
 
 // Galaxy categories mapped directly to valid choices
 const GALAXY_DEFS = [
@@ -268,20 +269,22 @@ export default function Discover() {
                 </div>
 
                 {filteredProjects.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20 items-stretch">
                     <AnimatePresence>
                       {filteredProjects.map((project, i) => {
                         const projColor = GALAXY_DEFS.find(g => g.id === project.galaxy)?.color || 'white';
+                                          
                         return (
                         <motion.div
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.9 }}
-                          transition={{ duration: 0.3, delay: i * 0.05 }}
+                          initial={{ opacity: 0, y: 30 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -30 }}
+                          transition={{ duration: 0.5, delay: i * 0.05, ease: [0.25, 1, 0.5, 1] }}
                           key={project.id}
-                          className="perf-card group relative glass rounded-3xl p-6 border border-white/5 hover:bg-white/[0.06] transition-all overflow-hidden flex flex-col h-full"
+                          className="perf-card group flex flex-col h-full"
                         >
-                          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity" style={{ backgroundColor: projColor }}></div>
+                          <GlowCard colorClass={projColor} className="w-full h-full min-h-[280px] p-6 flex flex-col bento-card border-white/5 cursor-pointer">
+                          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] opacity-20 group-hover:opacity-50 transition-opacity duration-700" style={{ backgroundColor: projColor }}></div>
                           
                           <div className="flex justify-between items-start mb-4 relative z-10">
                             <span className="text-xs font-medium px-3 py-1 rounded-full bg-white/5 border border-white/10" style={{ color: projColor }}>
@@ -335,10 +338,11 @@ export default function Discover() {
                           
                           <Link 
                             to={`/projects/${project.id}`}
-                            className="relative z-10 block w-full py-3 text-center glass border border-white/10 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
+                            className="relative z-10 block w-full py-3 text-center glass border border-white/10 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors flex flex-row items-center justify-center gap-2"
                           >
                             View Project <ArrowRight size={14} />
                           </Link>
+                        </GlowCard>
                         </motion.div>
                         );
                       })}

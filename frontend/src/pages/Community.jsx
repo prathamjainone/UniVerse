@@ -173,9 +173,10 @@ function PostCard({ post, userId, userName, userPhoto, onVote, onAddComment, onD
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.35, delay: index * 0.06 }}
-      className="rounded-2xl border border-white/[0.06] hover:border-white/[0.1] transition-all duration-300 group bg-black/40 backdrop-blur-md"
+      className="glass rounded-3xl border border-white/[0.06] hover:border-white/20 hover:shadow-[0_0_40px_rgba(112,0,255,0.15)] transition-all duration-500 group relative overflow-hidden"
     >
-      <div className="p-5 flex">
+      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
+      <div className="p-6 flex relative z-10">
         {/* Vote sidebar */}
         <VoteButtons post={post} userId={userId} onVote={onVote} />
 
@@ -291,8 +292,8 @@ function CreatePostCard({ user, onPost, login }) {
   const photo = user.photo_url || avatarUrl(user.display_name);
 
   return (
-    <div className="glass-strong rounded-2xl border border-white/[0.06] mb-6 overflow-hidden">
-      <div className="p-5">
+    <div className="glass-strong rounded-3xl border border-white/10 hover:border-white/20 transition-all duration-500 mb-8 overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+      <div className="p-6">
         <div className="flex gap-3">
           <img src={photo} alt="" className="w-10 h-10 rounded-full border border-white/10 shrink-0" />
           <div className="flex-grow">
