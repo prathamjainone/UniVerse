@@ -17,28 +17,44 @@ export function AuthProvider({ children }) {
       return;
     }
     
-    const wsBase = API_URL.replace(/^http/, 'ws');
-    const ws = new WebSocket(`${wsBase}/ws/presence/${user.uid}`);
+    let ws;
+    let reconnectTimer;
     
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'sync') {
-          setOnlineUsers(data.online_users || []);
-        } else if (data.type === 'presence_update') {
-          if (data.status === 'online') {
-            setOnlineUsers(prev => prev.includes(data.uid) ? prev : [...prev, data.uid]);
-          } else {
-            setOnlineUsers(prev => prev.filter(uid => uid !== data.uid));
+    const connect = () => {
+      const wsBase = API_URL.replace(/^http/, 'ws');
+      ws = new WebSocket(`${wsBase}/ws/presence/${user.uid}`);
+      
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'sync') {
+            setOnlineUsers(data.online_users || []);
+          } else if (data.type === 'presence_update') {
+            if (data.status === 'online') {
+              setOnlineUsers(prev => prev.includes(data.uid) ? prev : [...prev, data.uid]);
+            } else {
+              setOnlineUsers(prev => prev.filter(uid => uid !== data.uid));
+            }
           }
+        } catch (err) {
+          console.error("Presence WS parsing error", err);
         }
-      } catch (err) {
-        console.error("Presence WS parsing error", err);
-      }
+      };
+
+      ws.onclose = () => {
+        // Auto-reconnect after 3 seconds
+        reconnectTimer = setTimeout(connect, 3000);
+      };
     };
+
+    connect();
     
     return () => {
-      ws.close();
+      clearTimeout(reconnectTimer);
+      if (ws) {
+        ws.onclose = null; // Prevent reconnect loop on unmount
+        ws.close();
+      }
     };
   }, [user]);
 
