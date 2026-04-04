@@ -25,8 +25,11 @@ def _save_db(data: Dict[str, Any]):
 def get_collection(collection_name: str) -> List[Dict[str, Any]]:
     fs_db = get_firestore_db()
     if fs_db:
-        docs = fs_db.collection(collection_name).stream()
-        return [doc.to_dict() | {"id": doc.id} for doc in docs]
+        try:
+            docs = fs_db.collection(collection_name).stream()
+            return [doc.to_dict() | {"id": doc.id} for doc in docs]
+        except Exception:
+            print("Firestore fetch failed, falling back to local db...")
         
     db = _load_db()
     return db.get(collection_name, [])
@@ -34,10 +37,13 @@ def get_collection(collection_name: str) -> List[Dict[str, Any]]:
 def create_document(collection_name: str, data: Dict[str, Any]) -> str:
     fs_db = get_firestore_db()
     if fs_db:
-        doc_ref = fs_db.collection(collection_name).document()
-        data["id"] = doc_ref.id
-        doc_ref.set(data)
-        return doc_ref.id
+        try:
+            doc_ref = fs_db.collection(collection_name).document()
+            data["id"] = doc_ref.id
+            doc_ref.set(data)
+            return doc_ref.id
+        except Exception:
+            print("Firestore create failed, falling back to local db...")
         
     db = _load_db()
     new_id = str(uuid.uuid4())
@@ -51,11 +57,14 @@ def create_document(collection_name: str, data: Dict[str, Any]) -> str:
 def update_document(collection_name: str, doc_id: str, updates: Dict[str, Any]) -> bool:
     fs_db = get_firestore_db()
     if fs_db:
-        doc_ref = fs_db.collection(collection_name).document(doc_id)
-        if doc_ref.get().exists:
-            doc_ref.update(updates)
-            return True
-        return False
+        try:
+            doc_ref = fs_db.collection(collection_name).document(doc_id)
+            if doc_ref.get().exists:
+                doc_ref.update(updates)
+                return True
+            return False
+        except Exception:
+            print("Firestore update failed, falling back to local db...")
         
     db = _load_db()
     items = db.get(collection_name, [])
@@ -69,11 +78,14 @@ def update_document(collection_name: str, doc_id: str, updates: Dict[str, Any]) 
 def delete_document(collection_name: str, doc_id: str) -> bool:
     fs_db = get_firestore_db()
     if fs_db:
-        doc_ref = fs_db.collection(collection_name).document(doc_id)
-        if doc_ref.get().exists:
-            doc_ref.delete()
-            return True
-        return False
+        try:
+            doc_ref = fs_db.collection(collection_name).document(doc_id)
+            if doc_ref.get().exists:
+                doc_ref.delete()
+                return True
+            return False
+        except Exception:
+            print("Firestore delete failed, falling back to local db...")
         
     db = _load_db()
     items = db.get(collection_name, [])
@@ -85,41 +97,59 @@ def delete_document(collection_name: str, doc_id: str) -> bool:
     return False
 
 def get_document(collection_name: str, doc_id: str) -> Dict[str, Any]:
-    fs_db = get_firestore_db()
-    if fs_db:
-        doc_ref = fs_db.collection(collection_name).document(doc_id)
-        doc = doc_ref.get()
-        if doc.exists:
-            return doc.to_dict() | {"id": doc.id}
-        return None
-        
+    # Try Firestore first
+    try:
+        fs_db = get_firestore_db()
+        if fs_db:
+            doc_ref = fs_db.collection(collection_name).document(doc_id)
+            doc = doc_ref.get()
+            if doc.exists:
+                result = doc.to_dict() | {"id": doc.id}
+                print(f"[DB] get_document('{collection_name}', '{doc_id}') -> Found in Firestore")
+                return result
+            else:
+                print(f"[DB] get_document('{collection_name}', '{doc_id}') -> NOT in Firestore")
+    except Exception as e:
+        print(f"[DB] Firestore get_document exception: {e}")
+    
+    # Always fallback to local db
     db = _load_db()
     items = db.get(collection_name, [])
     for item in items:
         if item.get("id") == doc_id:
+            print(f"[DB] get_document('{collection_name}', '{doc_id}') -> Found in local JSON")
             return item
+    print(f"[DB] get_document('{collection_name}', '{doc_id}') -> NOT FOUND anywhere")
     return None
 
 def upsert_document(collection_name: str, doc_id: str, data: Dict[str, Any]) -> str:
+    data["id"] = doc_id
+    
+    # Try Firestore
     fs_db = get_firestore_db()
     if fs_db:
-        doc_ref = fs_db.collection(collection_name).document(doc_id)
-        data["id"] = doc_id
-        doc_ref.set(data, merge=True)
-        return doc_id
-        
+        try:
+            doc_ref = fs_db.collection(collection_name).document(doc_id)
+            doc_ref.set(data, merge=True)
+            print(f"[DB] upsert_document('{collection_name}', '{doc_id}') -> Written to Firestore")
+        except Exception:
+            print(f"[DB] Firestore upsert failed for '{collection_name}'/'{doc_id}', falling back to local db...")
+    
+    # ALWAYS also write to local JSON as backup
     db = _load_db()
     if collection_name not in db:
         db[collection_name] = []
     
-    data["id"] = doc_id
     items = db[collection_name]
     for i, item in enumerate(items):
         if item.get("id") == doc_id:
             items[i].update(data)
             _save_db(db)
+            print(f"[DB] upsert_document('{collection_name}', '{doc_id}') -> Updated in local JSON")
             return doc_id
             
     items.append(data)
     _save_db(db)
+    print(f"[DB] upsert_document('{collection_name}', '{doc_id}') -> Inserted into local JSON")
     return doc_id
+

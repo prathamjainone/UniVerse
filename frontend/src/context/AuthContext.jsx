@@ -75,16 +75,17 @@ export function AuthProvider({ children }) {
           const res = await fetch(`${API_URL}/api/users/${currentUser.uid}`);
           if (res.ok) {
             const data = await res.json();
-            hasProfile = true;
-            profileData = {
-              skills: data.skills || [],
-              branch: data.branch || '',
-              year: data.year || '',
-              bio: data.bio || '',
-              github: data.github || '',
-              // Use saved display_name if they updated it, else Firebase name
-              display_name: data.display_name || currentUser.displayName,
-            };
+            hasProfile = data.has_profile === true;
+            if (hasProfile) {
+              profileData = {
+                skills: data.skills || [],
+                branch: data.branch || '',
+                year: data.year || '',
+                bio: data.bio || '',
+                github: data.github || '',
+                display_name: data.display_name || currentUser.displayName,
+              };
+            }
           }
         } catch (err) {
           console.warn("Could not fetch user profile status from API", err);

@@ -53,8 +53,27 @@ export default function ProjectDetails() {
 
   useEffect(() => {
     fetchProject();
-    const intervalId = setInterval(fetchProject, 5000);
-    return () => clearInterval(intervalId);
+    
+    // Throttle polling to save Firebase Reads: 
+    // 1. Only poll if the tab is visible
+    // 2. Increase interval from 5s to 30s
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchProject();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchProject();
+      }
+    }, 30000);
+    
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [id]);
 
   const handleAddComment = async () => {

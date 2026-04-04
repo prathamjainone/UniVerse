@@ -335,6 +335,8 @@ def get_team_analysis(project_id: str):
 
 class GenerateMOMRequest(BaseModel):
     transcripts: List[str]
+    fallback_title: str = "Project"
+    fallback_members: List[str] = []
 
 @router.post("/{project_id}/generate_mom")
 def generate_mom(project_id: str, payload: GenerateMOMRequest, background_tasks: BackgroundTasks):
@@ -344,17 +346,22 @@ def generate_mom(project_id: str, payload: GenerateMOMRequest, background_tasks:
     
     proj = get_document('projects', project_id)
     if not proj:
-        return {"success": False, "error": "Project not found"}
+        # Instead of failing, utilize the fallback provided by the frontend cache
+        print("Project not found in DB or quota exceeded. Using frontend fallback data for emails.")
+        title = payload.fallback_title
+        members = payload.fallback_members
+    else:
+        title = proj.get("title", "Project")
+        members = proj.get("members", [])
         
     mom_text = generate_mom_from_transcripts(payload.transcripts)
     
     # Send MOM email to all project members
-    members = proj.get("members", [])
     members_notified = 0
     for member_id in members:
         req_user = get_document('users', member_id)
         if req_user and req_user.get("email"):
-            subject = f"Minutes of Meeting: {proj.get('title', 'Project')}"
+            subject = f"Minutes of Meeting: {title}"
             body = f"Here is the AI-generated Summary and Action Items from your recent War Room session:\n\n{mom_text}"
             background_tasks.add_task(send_email_notification, req_user.get("email"), subject, body)
             members_notified += 1

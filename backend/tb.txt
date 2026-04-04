@@ -1,0 +1,192 @@
+Traceback (most recent call last):
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\google\api_core\grpc_helpers.py", line 169, in error_remapped_callable
+    return _StreamingResponseIterator(
+        result, prefetch_first_result=prefetch_first
+    )
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\google\api_core\grpc_helpers.py", line 91, in __init__
+    self._stored_first_result = next(self._wrapped)
+                                ~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\grpc\_channel.py", line 538, in __next__
+    return self._next()
+           ~~~~~~~~~~^^
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\grpc\_channel.py", line 945, in _next
+    raise self
+grpc._channel._MultiThreadedRendezvous: <_MultiThreadedRendezvous of RPC that terminated with:
+	status = StatusCode.UNAVAILABLE
+	details = "failed to connect to all addresses; last error: UNAVAILABLE: ipv4:142.250.195.10:443: TCP stream shutting down"
+	debug_error_string = "UNKNOWN:Error received from peer  {grpc_status:14, grpc_message:"failed to connect to all addresses; last error: UNAVAILABLE: ipv4:142.250.195.10:443: TCP stream shutting down"}"
+>
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\google\api_core\retry\retry_unary.py", line 147, in retry_target
+    result = target()
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\google\api_core\timeout.py", line 130, in func_with_timeout
+    return func(*args, **kwargs)
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\google\api_core\grpc_helpers.py", line 173, in error_remapped_callable
+    raise exceptions.from_grpc_error(exc) from exc
+google.api_core.exceptions.ServiceUnavailable: 503 failed to connect to all addresses; last error: UNAVAILABLE: ipv4:142.250.195.10:443: TCP stream shutting down
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Hackathons\Uni-Verse\UniVerse\backend\direct_test_mom.py", line 8, in <module>
+    response = client.post("/api/projects/IKmrEm9xTF0tE9FTY2AR/generate_mom", json={"transcripts": ["Alice: Hi", "Bob: Hello"]})
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\starlette\testclient.py", line 546, in post
+    return super().post(
+           ~~~~~~~~~~~~^
+        url,
+        ^^^^
+    ...<10 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\httpx\_client.py", line 1144, in post
+    return self.request(
+           ~~~~~~~~~~~~^
+        "POST",
+        ^^^^^^^
+    ...<11 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\starlette\testclient.py", line 445, in request
+    return super().request(
+           ~~~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<11 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\httpx\_client.py", line 825, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\httpx\_client.py", line 914, in send
+    response = self._send_handling_auth(
+        request,
+    ...<2 lines>...
+        history=[],
+    )
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\httpx\_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+        request,
+        follow_redirects=follow_redirects,
+        history=history,
+    )
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\httpx\_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\httpx\_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\starlette\testclient.py", line 348, in handle_request
+    raise exc
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\starlette\testclient.py", line 345, in handle_request
+    portal.call(self.app, scope, receive, send)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\anyio\from_thread.py", line 334, in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\anaconda3\Lib\concurrent\futures\_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\anaconda3\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\anyio\from_thread.py", line 259, in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\fastapi\applications.py", line 1160, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\starlette\applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\starlette\middleware\cors.py", line 87, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\fastapi\routing.py", line 130, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\fastapi\routing.py", line 116, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\fastapi\routing.py", line 670, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\fastapi\routing.py", line 326, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "D:\Hackathons\Uni-Verse\UniVerse\backend\routers\projects.py", line 345, in generate_mom
+    from database import get_document
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Hackathons\Uni-Verse\UniVerse\backend\database.py", line 91, in get_document
+    items = db.get(collection_name, [])
+              ^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\google\cloud\firestore_v1\document.py", line 413, in get
+    response_iter = self._client._firestore_api.batch_get_documents(
+        request=request,
+        metadata=self._client._rpc_metadata,
+        **kwargs,
+    )
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\google\cloud\firestore_v1\services\firestore\client.py", line 1223, in batch_get_documents
+    response = rpc(
+        request,
+    ...<2 lines>...
+        metadata=metadata,
+    )
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\google\api_core\gapic_v1\method.py", line 131, in __call__
+    return wrapped_func(*args, **kwargs)
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\google\api_core\retry\retry_unary.py", line 294, in retry_wrapped_func
+    return retry_target(
+        target,
+    ...<3 lines>...
+        on_error=on_error,
+    )
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\google\api_core\retry\retry_unary.py", line 156, in retry_target
+    next_sleep = _retry_error_helper(
+        exc,
+    ...<6 lines>...
+        timeout,
+    )
+  File "C:\Users\Lenovo\anaconda3\Lib\site-packages\google\api_core\retry\retry_base.py", line 229, in _retry_error_helper
+    raise final_exc from source_exc
+google.api_core.exceptions.RetryError: Timeout of 300.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNAVAILABLE: ipv4:142.250.195.10:443: TCP stream shutting down

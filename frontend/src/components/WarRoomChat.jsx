@@ -201,25 +201,37 @@ export default function WarRoomChat({ project, user }) {
   };
 
   const generateMOM = async () => {
-    if (!sessionTranscripts.current.length) return;
+    if (!sessionTranscripts.current || sessionTranscripts.current.length === 0) {
+      alert("No transcripts recorded yet! Make sure you enable 'Start MOM Rec' and talk before generating MOM.");
+      return;
+    }
     setIsGeneratingMOM(true);
     try {
       const res = await fetch(`${API_URL}/api/projects/${projectId}/generate_mom`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcripts: sessionTranscripts.current })
+        body: JSON.stringify({ 
+           transcripts: sessionTranscripts.current,
+           fallback_title: project.title || 'Project',
+           fallback_members: project.members || []
+        })
       });
       const data = await res.json();
       if (data.success) {
-         const newNotes = sharedNotes + (sharedNotes ? "\n\n" : "") + data.mom + "\n\n";
-         setSharedNotes(newNotes);
-         if (socketRef.current && isConnected) {
-             socketRef.current.send(JSON.stringify({ type: 'editor_sync', sender: user.uid, payload: newNotes }));
+         // The sent emails are handled by the backend.
+         // We do not paste it into the shared notes anymore.
+         if (data.members_notified > 0) {
+           alert(`MOM generated and emailed sequentially to ${data.members_notified} member(s)!`);
+         } else {
+           alert(`MOM generated successfully, but no members were notified (no valid emails found).`);
          }
          sessionTranscripts.current = [];
+      } else {
+         alert(`Failed to generate MOM: ${data.error || 'Server rejected request.'}`);
       }
     } catch (err) {
       console.error("MOM Gen Error", err);
+      alert("Failed to generate MOM.");
     } finally {
       setIsGeneratingMOM(false);
     }
@@ -739,11 +751,9 @@ export default function WarRoomChat({ project, user }) {
             </h3>
             {isLeader && (
               <div className="flex gap-2">
-                {sessionTranscripts.current.length > 0 && !isMOMEnabled && (
-                  <button onClick={generateMOM} disabled={isGeneratingMOM} className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-purple-500/20 text-purple-400 border border-purple-500/50 rounded hover:bg-purple-500/30 transition-colors">
-                    {isGeneratingMOM ? 'Generating...' : 'Generate MOM'}
-                  </button>
-                )}
+                <button onClick={generateMOM} disabled={isGeneratingMOM} className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-purple-500/20 text-purple-400 border border-purple-500/50 rounded hover:bg-purple-500/30 transition-colors">
+                  {isGeneratingMOM ? 'Generating...' : 'Generate MOM'}
+                </button>
                 <button 
                    onClick={toggleMOM}
                    className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded border transition-colors ${
