@@ -1,12 +1,12 @@
 const hostname = window.location.hostname;
-let API_URL = 'https://uni-verse-6bbo.onrender.com'; // Default production
+
+// Check env var FIRST (set in Vercel/Render dashboard)
+let API_URL = import.meta.env.VITE_API_URL || 'https://universe-backend-0mhk.onrender.com';
 
 if (hostname === 'localhost') {
   API_URL = 'http://localhost:8000';
 } else if (hostname.startsWith('192.168.') || hostname.startsWith('10.')) {
   API_URL = `http://${hostname}:8000`;
-} else if (import.meta.env && import.meta.env.VITE_API_URL) {
-  API_URL = import.meta.env.VITE_API_URL;
 }
 
 export default API_URL;
