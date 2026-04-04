@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronUp, ChevronDown, MessageSquare, Send, Trash2,
   TrendingUp, Clock, User, Sparkles, PenLine, Hash, X,
-  LogIn, Compass, Rocket, Image as ImageIcon, AlertCircle
+  LogIn, Compass, Rocket, AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
@@ -173,7 +173,7 @@ function PostCard({ post, userId, userName, userPhoto, onVote, onAddComment, onD
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.35, delay: index * 0.06 }}
-      className="glass rounded-2xl border border-white/[0.06] hover:border-white/[0.1] transition-all duration-300 group"
+      className="rounded-2xl border border-white/[0.06] hover:border-white/[0.1] transition-all duration-300 group bg-black/40 backdrop-blur-md"
     >
       <div className="p-5 flex">
         {/* Vote sidebar */}
@@ -363,9 +363,6 @@ function CreatePostCard({ user, onPost, login }) {
       {expanded && (
         <div className="flex justify-between items-center px-5 py-3 border-t border-white/5 bg-white/[0.01]">
           <div className="flex gap-2">
-            <button className="p-2 text-slate-500 hover:text-white glass rounded-lg transition-colors" title="Add image">
-              <ImageIcon size={16} />
-            </button>
             <button
               className="p-2 text-slate-500 hover:text-white glass rounded-lg transition-colors"
               title="Add tag"
@@ -530,230 +527,299 @@ export default function Community() {
   ];
 
   return (
-    <div className="pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col lg:flex-row gap-8 relative z-10">
-
-      {/* ─── Left Sidebar ─── */}
-      <div className="w-full lg:w-[280px] shrink-0">
-        <div className="sticky top-28 flex flex-col gap-5">
-          {/* Profile card */}
-          <div className="glass-strong rounded-2xl p-5 border border-white/[0.06]">
-            <div className="flex items-center gap-3 mb-5">
-              <img
-                src={userPhoto || avatarUrl(userName)}
-                alt="Profile"
-                className="w-12 h-12 rounded-full border border-white/10"
-              />
-              <div className="min-w-0">
-                <h3 className="font-bold text-base truncate">{userName}</h3>
-                <p className="text-slate-400 text-xs truncate">{user?.branch || 'Community Member'}</p>
-              </div>
-            </div>
-            {user ? (
-              <Link
-                to="/profile"
-                className="block w-full py-2.5 glass border border-white/5 rounded-xl text-xs font-medium hover:bg-white/10 transition-colors text-center text-slate-300"
-              >
-                View Profile
-              </Link>
-            ) : (
-              <button
-                onClick={login}
-                className="w-full py-2.5 glass border border-white/5 rounded-xl text-xs font-medium hover:bg-white/10 transition-colors flex items-center justify-center gap-2 text-neon-blue"
-              >
-                <LogIn size={14} /> Sign in to join
-              </button>
-            )}
-          </div>
-
-          {/* Quick links */}
-          <div className="glass-strong rounded-2xl p-5 border border-white/[0.06] hidden lg:block">
-            <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-slate-200">
-              <Sparkles size={14} className="text-neon-purple" /> Quick Links
-            </h4>
-            <div className="space-y-1">
-              <Link
-                to="/discover"
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
-              >
-                <Compass size={14} className="text-neon-teal" />Explore Projects
-              </Link>
-              <Link
-                to="/onboarding"
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
-              >
-                <Rocket size={14} className="text-neon-purple" />Create Profile
-              </Link>
+    <>
+      {/* ── Mobile layout (stacked, natural scroll) ── */}
+      <div className="lg:hidden pt-28 pb-20 px-4 sm:px-6 flex flex-col gap-3 relative z-10">
+        {/* Profile card */}
+        <div className="glass-strong rounded-2xl p-5 border border-white/[0.06]">
+          <div className="flex items-center gap-3 mb-4">
+            <img src={userPhoto || avatarUrl(userName)} alt="Profile" className="w-12 h-12 rounded-full border border-white/10" />
+            <div className="min-w-0">
+              <h3 className="font-bold text-base truncate">{userName}</h3>
+              <p className="text-slate-400 text-xs truncate">{user?.branch || 'Community Member'}</p>
             </div>
           </div>
-
-          {/* Join CTA */}
-          {!user && (
-            <div className="glass rounded-2xl p-5 border border-white/[0.06] text-center hidden lg:block">
-              <h4 className="font-bold text-sm mb-1.5">Join Uni-Verse</h4>
-              <p className="text-[11px] text-slate-400 mb-3">Connect, share, and build with fellow students.</p>
-              <button
-                onClick={login}
-                className="w-full py-2.5 bg-gradient-to-r from-neon-purple to-neon-blue text-white text-xs font-semibold rounded-xl hover:shadow-[0_0_20px_rgba(112,0,255,0.3)] transition-all"
-              >
-                Get Started
-              </button>
-            </div>
+          {user ? (
+            <Link to="/profile" className="block w-full py-2.5 glass border border-white/5 rounded-xl text-xs font-medium hover:bg-white/10 transition-colors text-center text-slate-300">View Profile</Link>
+          ) : (
+            <button onClick={login} className="w-full py-2.5 glass border border-white/5 rounded-xl text-xs font-medium hover:bg-white/10 transition-colors flex items-center justify-center gap-2 text-neon-blue"><LogIn size={14} /> Sign in to join</button>
           )}
         </div>
-      </div>
 
-      {/* ─── Main Feed ─── */}
-      <div className="flex-grow min-w-0 max-w-2xl mx-auto lg:mx-0 w-full">
-        {/* Post composer */}
         <CreatePostCard user={user} onPost={handlePost} login={login} />
 
         {/* Tabs + Sort */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between">
           <div className="flex gap-1 bg-white/[0.03] p-1 rounded-xl border border-white/5">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
-                    activeTab === tab.key
-                      ? 'bg-white/10 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <Icon size={13} />
-                  {tab.label}
-                </button>
-              );
-            })}
+            {tabs.map((tab) => { const Icon = tab.icon; return (
+              <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${activeTab === tab.key ? 'bg-white/10 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}><Icon size={13} />{tab.label}</button>
+            ); })}
           </div>
-
           {activeTab === 'feed' && (
             <div className="flex gap-1 bg-white/[0.03] p-1 rounded-xl border border-white/5">
-              <button
-                onClick={() => setSortBy('votes')}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs transition-all ${
-                  sortBy === 'votes'
-                    ? 'bg-white/10 text-white'
-                    : 'text-slate-500 hover:text-white'
-                }`}
-              >
-                <TrendingUp size={12} /> Top
-              </button>
-              <button
-                onClick={() => setSortBy('recent')}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs transition-all ${
-                  sortBy === 'recent'
-                    ? 'bg-white/10 text-white'
-                    : 'text-slate-500 hover:text-white'
-                }`}
-              >
-                <Clock size={12} /> New
-              </button>
+              <button onClick={() => setSortBy('votes')} className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs transition-all ${sortBy === 'votes' ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-white'}`}><TrendingUp size={12} /> Top</button>
+              <button onClick={() => setSortBy('recent')} className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs transition-all ${sortBy === 'recent' ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-white'}`}><Clock size={12} /> New</button>
             </div>
           )}
         </div>
 
-        {/* Posts list */}
+        {/* Posts */}
         <div className="space-y-4">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <div className="w-10 h-10 border-2 border-neon-blue/20 border-t-neon-blue rounded-full animate-spin mb-4" />
-              <p className="text-xs text-slate-500">Loading posts...</p>
-            </div>
+            <div className="flex flex-col items-center justify-center py-20"><div className="w-10 h-10 border-2 border-neon-blue/20 border-t-neon-blue rounded-full animate-spin mb-4" /><p className="text-xs text-slate-500">Loading posts...</p></div>
           ) : error ? (
-            <div className="glass rounded-2xl p-10 border border-white/5 text-center">
-              <AlertCircle size={32} className="mx-auto text-neon-magenta/60 mb-3" />
-              <p className="text-sm text-slate-400">{error}</p>
-              <button
-                onClick={fetchPosts}
-                className="mt-4 px-5 py-2 text-xs font-medium glass rounded-full border border-white/10 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
-              >
-                Retry
-              </button>
-            </div>
+            <div className="glass rounded-2xl p-10 border border-white/5 text-center"><AlertCircle size={32} className="mx-auto text-neon-magenta/60 mb-3" /><p className="text-sm text-slate-400">{error}</p><button onClick={fetchPosts} className="mt-4 px-5 py-2 text-xs font-medium glass rounded-full border border-white/10 text-slate-300 hover:text-white hover:bg-white/5 transition-colors">Retry</button></div>
           ) : posts.length === 0 ? (
             <div className="glass rounded-2xl p-12 border border-white/5 text-center">
               <div className="text-4xl mb-4">{activeTab === 'my' ? '📝' : '✨'}</div>
-              <h3 className="text-base font-bold text-white mb-2">
-                {activeTab === 'my' ? 'No posts yet' : 'The feed is empty'}
-              </h3>
-              <p className="text-slate-400 text-sm mb-5">
-                {activeTab === 'my'
-                  ? 'Share your first update with the community!'
-                  : user
-                  ? 'Be the first to share something awesome!'
-                  : 'Sign in to post and engage with the community.'}
-              </p>
-              {!user && (
-                <button
-                  onClick={login}
-                  className="px-6 py-2.5 bg-gradient-to-r from-neon-purple to-neon-blue text-white text-sm font-semibold rounded-full hover:shadow-[0_0_20px_rgba(112,0,255,0.3)] transition-all"
-                >
-                  Sign In
-                </button>
-              )}
+              <h3 className="text-base font-bold text-white mb-2">{activeTab === 'my' ? 'No posts yet' : 'The feed is empty'}</h3>
+              <p className="text-slate-400 text-sm mb-5">{activeTab === 'my' ? 'Share your first update with the community!' : user ? 'Be the first to share something awesome!' : 'Sign in to post and engage with the community.'}</p>
+              {!user && <button onClick={login} className="px-6 py-2.5 bg-gradient-to-r from-neon-purple to-neon-blue text-white text-sm font-semibold rounded-full hover:shadow-[0_0_20px_rgba(112,0,255,0.3)] transition-all">Sign In</button>}
             </div>
           ) : (
-            <AnimatePresence>
-              {posts.map((post, i) => (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  userId={userId}
-                  userName={userName}
-                  userPhoto={userPhoto}
-                  onVote={handleVote}
-                  onAddComment={handleAddComment}
-                  onDelete={handleDelete}
-                  index={i}
-                />
-              ))}
-            </AnimatePresence>
+            <AnimatePresence>{posts.map((post, i) => <PostCard key={post.id} post={post} userId={userId} userName={userName} userPhoto={userPhoto} onVote={handleVote} onAddComment={handleAddComment} onDelete={handleDelete} index={i} />)}</AnimatePresence>
           )}
         </div>
       </div>
 
-      {/* ─── Right Sidebar (trending tags / stats) ─── */}
-      <div className="w-full lg:w-[260px] shrink-0 hidden lg:block">
-        <div className="sticky top-28 space-y-5">
-          {/* Trending tags */}
-          <div className="glass-strong rounded-2xl p-5 border border-white/[0.06]">
-            <h4 className="font-bold text-sm mb-3 flex items-center gap-2">
-              <TrendingUp size={14} className="text-neon-teal" /> Trending Topics
-            </h4>
-            <TrendingTags posts={posts} />
-          </div>
+      {/* ── Desktop layout (fixed sidebars, scrollable feed) ── */}
+      <div className="hidden lg:flex fixed inset-0 top-[72px] z-10">
+        {/* Left Sidebar — fixed, own scroll */}
+        <aside
+          data-lenis-prevent
+          className="w-[280px] shrink-0 h-full overflow-y-auto pl-4 pr-2 pt-4"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
+        >
+          <div className="flex flex-col gap-5 pb-8">
+            {/* Profile card */}
+            <div className="glass-strong rounded-2xl p-5 border border-white/[0.06]">
+              <div className="flex items-center gap-3 mb-5">
+                <img
+                  src={userPhoto || avatarUrl(userName)}
+                  alt="Profile"
+                  className="w-12 h-12 rounded-full border border-white/10"
+                />
+                <div className="min-w-0">
+                  <h3 className="font-bold text-base truncate">{userName}</h3>
+                  <p className="text-slate-400 text-xs truncate">{user?.branch || 'Community Member'}</p>
+                </div>
+              </div>
+              {user ? (
+                <Link
+                  to="/profile"
+                  className="block w-full py-2.5 glass border border-white/5 rounded-xl text-xs font-medium hover:bg-white/10 transition-colors text-center text-slate-300"
+                >
+                  View Profile
+                </Link>
+              ) : (
+                <button
+                  onClick={login}
+                  className="w-full py-2.5 glass border border-white/5 rounded-xl text-xs font-medium hover:bg-white/10 transition-colors flex items-center justify-center gap-2 text-neon-blue"
+                >
+                  <LogIn size={14} /> Sign in to join
+                </button>
+              )}
+            </div>
 
-          {/* Community stats */}
-          <div className="glass-strong rounded-2xl p-5 border border-white/[0.06]">
-            <h4 className="font-bold text-sm mb-3 flex items-center gap-2">
-              <Sparkles size={14} className="text-neon-blue" /> Community Pulse
-            </h4>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-slate-400">Total Posts</span>
-                <span className="text-xs font-bold text-white">{posts.length}</span>
+            {/* Quick links */}
+            <div className="glass-strong rounded-2xl p-5 border border-white/[0.06]">
+              <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-slate-200">
+                <Sparkles size={14} className="text-neon-purple" /> Quick Links
+              </h4>
+              <div className="space-y-1">
+                <Link
+                  to="/discover"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+                >
+                  <Compass size={14} className="text-neon-teal" />Explore Projects
+                </Link>
+                <Link
+                  to="/onboarding"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+                >
+                  <Rocket size={14} className="text-neon-purple" />Update Profile
+                </Link>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-slate-400">Total Comments</span>
-                <span className="text-xs font-bold text-white">
-                  {posts.reduce((sum, p) => sum + (p.comments?.length || 0), 0)}
-                </span>
+            </div>
+
+            {/* Join CTA */}
+            {!user && (
+              <div className="glass rounded-2xl p-5 border border-white/[0.06] text-center">
+                <h4 className="font-bold text-sm mb-1.5">Join Uni-Verse</h4>
+                <p className="text-[11px] text-slate-400 mb-3">Connect, share, and build with fellow students.</p>
+                <button
+                  onClick={login}
+                  className="w-full py-2.5 bg-gradient-to-r from-neon-purple to-neon-blue text-white text-xs font-semibold rounded-xl hover:shadow-[0_0_20px_rgba(112,0,255,0.3)] transition-all"
+                >
+                  Get Started
+                </button>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-slate-400">Total Votes</span>
-                <span className="text-xs font-bold text-white">
-                  {posts.reduce((sum, p) => sum + Math.abs(p.upvotes || 0), 0)}
-                </span>
+            )}
+          </div>
+        </aside>
+
+        {/* Center Feed — scrollable */}
+        <main
+          data-lenis-prevent
+          className="flex-grow h-full overflow-y-auto px-3 scroll-smooth"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
+        >
+          <div className="max-w-2xl mx-auto py-6 pb-16">
+            {/* Post composer */}
+            <CreatePostCard user={user} onPost={handlePost} login={login} />
+
+            {/* Tabs + Sort */}
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex gap-1 bg-white/[0.03] p-1 rounded-xl border border-white/5">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.key}
+                      onClick={() => setActiveTab(tab.key)}
+                      className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                        activeTab === tab.key
+                          ? 'bg-white/10 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      <Icon size={13} />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {activeTab === 'feed' && (
+                <div className="flex gap-1 bg-white/[0.03] p-1 rounded-xl border border-white/5">
+                  <button
+                    onClick={() => setSortBy('votes')}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs transition-all ${
+                      sortBy === 'votes'
+                        ? 'bg-white/10 text-white'
+                        : 'text-slate-500 hover:text-white'
+                    }`}
+                  >
+                    <TrendingUp size={12} /> Top
+                  </button>
+                  <button
+                    onClick={() => setSortBy('recent')}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs transition-all ${
+                      sortBy === 'recent'
+                        ? 'bg-white/10 text-white'
+                        : 'text-slate-500 hover:text-white'
+                    }`}
+                  >
+                    <Clock size={12} /> New
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Posts list */}
+            <div className="space-y-4">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <div className="w-10 h-10 border-2 border-neon-blue/20 border-t-neon-blue rounded-full animate-spin mb-4" />
+                  <p className="text-xs text-slate-500">Loading posts...</p>
+                </div>
+              ) : error ? (
+                <div className="glass rounded-2xl p-10 border border-white/5 text-center">
+                  <AlertCircle size={32} className="mx-auto text-neon-magenta/60 mb-3" />
+                  <p className="text-sm text-slate-400">{error}</p>
+                  <button
+                    onClick={fetchPosts}
+                    className="mt-4 px-5 py-2 text-xs font-medium glass rounded-full border border-white/10 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : posts.length === 0 ? (
+                <div className="glass rounded-2xl p-12 border border-white/5 text-center">
+                  <div className="text-4xl mb-4">{activeTab === 'my' ? '📝' : '✨'}</div>
+                  <h3 className="text-base font-bold text-white mb-2">
+                    {activeTab === 'my' ? 'No posts yet' : 'The feed is empty'}
+                  </h3>
+                  <p className="text-slate-400 text-sm mb-5">
+                    {activeTab === 'my'
+                      ? 'Share your first update with the community!'
+                      : user
+                      ? 'Be the first to share something awesome!'
+                      : 'Sign in to post and engage with the community.'}
+                  </p>
+                  {!user && (
+                    <button
+                      onClick={login}
+                      className="px-6 py-2.5 bg-gradient-to-r from-neon-purple to-neon-blue text-white text-sm font-semibold rounded-full hover:shadow-[0_0_20px_rgba(112,0,255,0.3)] transition-all"
+                    >
+                      Sign In
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <AnimatePresence>
+                  {posts.map((post, i) => (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      userId={userId}
+                      userName={userName}
+                      userPhoto={userPhoto}
+                      onVote={handleVote}
+                      onAddComment={handleAddComment}
+                      onDelete={handleDelete}
+                      index={i}
+                    />
+                  ))}
+                </AnimatePresence>
+              )}
+            </div>
+          </div>
+        </main>
+
+        {/* Right Sidebar — fixed, own scroll */}
+        <aside
+          data-lenis-prevent
+          className="w-[260px] shrink-0 h-full overflow-y-auto pr-4 pl-2 pt-4"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
+        >
+          <div className="flex flex-col gap-5 pb-8">
+            {/* Trending tags */}
+            <div className="glass-strong rounded-2xl p-5 border border-white/[0.06]">
+              <h4 className="font-bold text-sm mb-3 flex items-center gap-2">
+                <TrendingUp size={14} className="text-neon-teal" /> Trending Topics
+              </h4>
+              <TrendingTags posts={posts} />
+            </div>
+
+            {/* Community stats */}
+            <div className="glass-strong rounded-2xl p-5 border border-white/[0.06]">
+              <h4 className="font-bold text-sm mb-3 flex items-center gap-2">
+                <Sparkles size={14} className="text-neon-blue" /> Community Pulse
+              </h4>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-slate-400">Total Posts</span>
+                  <span className="text-xs font-bold text-white">{posts.length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-slate-400">Total Comments</span>
+                  <span className="text-xs font-bold text-white">
+                    {posts.reduce((sum, p) => sum + (p.comments?.length || 0), 0)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-slate-400">Total Votes</span>
+                  <span className="text-xs font-bold text-white">
+                    {posts.reduce((sum, p) => sum + Math.abs(p.upvotes || 0), 0)}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </aside>
       </div>
-
-    </div>
+    </>
   );
 }
 
