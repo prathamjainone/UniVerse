@@ -337,17 +337,29 @@ class GenerateMOMRequest(BaseModel):
     transcripts: List[str]
 
 @router.post("/{project_id}/generate_mom")
-def generate_mom(project_id: str, payload: GenerateMOMRequest):
+def generate_mom(project_id: str, payload: GenerateMOMRequest, background_tasks: BackgroundTasks):
     from services.ai_mom import generate_mom_from_transcripts
-    
-    # We don't necessarily need to check if project exists, but good practice
+    from services.email_service import send_email_notification
     from database import get_document
+    
     proj = get_document('projects', project_id)
     if not proj:
         return {"success": False, "error": "Project not found"}
         
     mom_text = generate_mom_from_transcripts(payload.transcripts)
-    return {"success": True, "mom": mom_text}
+    
+    # Send MOM email to all project members
+    members = proj.get("members", [])
+    members_notified = 0
+    for member_id in members:
+        req_user = get_document('users', member_id)
+        if req_user and req_user.get("email"):
+            subject = f"Minutes of Meeting: {proj.get('title', 'Project')}"
+            body = f"Here is the AI-generated Summary and Action Items from your recent War Room session:\n\n{mom_text}"
+            background_tasks.add_task(send_email_notification, req_user.get("email"), subject, body)
+            members_notified += 1
+
+    return {"success": True, "mom": mom_text, "members_notified": members_notified}
 
 @router.post("/{project_id}/notify_meeting")
 def notify_meeting(project_id: str, background_tasks: BackgroundTasks):
