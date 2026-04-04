@@ -4,7 +4,7 @@ load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from firebase import init_firebase
-from routers import projects, community, users, chat, vetting, presence, compatibility_exam
+from routers import projects, community, communities, users, chat, vetting, presence, compatibility_exam
 app = FastAPI(title="Uni-Verse API", description="Backend for Uni-Verse team formation system")
 
 # Initialize Firebase on startup (gracefully falls back to Local JSON persist)
