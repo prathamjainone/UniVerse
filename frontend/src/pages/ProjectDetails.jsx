@@ -479,64 +479,143 @@ export default function ProjectDetails() {
             )}
           </div>
 
-          {/* Team Members Card */}
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-6">
-              <h4 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-                <Users size={16} className="text-teal-400" /> Current Team
-              </h4>
-              <span className="px-2 py-0.5 bg-teal-500/10 text-teal-400 text-[10px] font-bold rounded-lg border border-teal-500/20">
-                {project.members_info?.length || 0} Members
-              </span>
-            </div>
-
-            <div className="space-y-4">
-              {project.members_info?.map((m) => (
-                <div key={m.uid} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/5 group">
-                  <div className="relative">
-                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-300">
-                      {m.name.charAt(0)}
-                    </div>
-                    <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#121212] ${onlineUsers.includes(m.uid) ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500'}`} title={onlineUsers.includes(m.uid) ? "Online" : "Offline"} />
+          {/* Team Members Card — high-fidelity style matching ContributionTracker */}
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+            {/* Gradient header strip */}
+            <div className="p-5 bg-gradient-to-r from-teal-500/10 to-cyan-500/5 border-b border-white/5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-teal-500/20 rounded-xl">
+                    <Users size={18} className="text-teal-400" />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-white leading-none mb-1">{m.name} {m.uid === project.owner_uid && <span className="text-[10px] text-teal-500 font-black ml-1">OWNER</span>}</p>
-                    <p className="text-[10px] text-slate-500 truncate">{m.branch || 'University Student'}</p>
+                  <div>
+                    <h3 className="text-sm font-black text-white uppercase tracking-widest">
+                      Current Team
+                    </h3>
                   </div>
-                  {user && project.owner_uid === user.uid && m.github && (
-                    <button onClick={() => openGithubIntel(m)} className="text-emerald-500/40 hover:text-emerald-400 transition-colors group-hover:scale-110 ml-1" title="GitHub Intel">
-                      <Github size={14} />
-                    </button>
-                  )}
-                  {user && project.owner_uid === user.uid && m.uid !== project.owner_uid && (
-                    <button onClick={() => handleRemoveMember(m.uid)} className="text-red-500/50 hover:text-red-400 transition-colors group-hover:scale-110 ml-1" title="Remove Member">
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                  <button onClick={() => m.email ? window.open(`mailto:${m.email}`, '_blank') : alert('No email provided by this user.')} className="text-slate-600 hover:text-white transition-colors group-hover:scale-110 ml-1" title="Send Email">
-                    <Mail size={14} />
-                  </button>
                 </div>
-              ))}
+                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-teal-500/10 text-teal-400 text-[10px] font-bold rounded-lg border border-teal-500/20">
+                  <span className="inline-block w-1.5 h-1.5 bg-teal-400 rounded-full animate-pulse" />
+                  {project.members_info?.length || 0} Active
+                </span>
+              </div>
             </div>
 
+            {/* Member list body */}
+            <div className="p-5 space-y-3">
+              {project.members_info?.map((m, idx) => {
+                const isOwner = m.uid === project.owner_uid;
+                const isOnline = onlineUsers.includes(m.uid);
+                return (
+                  <motion.div
+                    key={m.uid}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.08 }}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-black/30 border border-white/5 hover:border-teal-500/20 transition-all group"
+                  >
+                    {/* Avatar with online indicator */}
+                    <div className="relative shrink-0">
+                      {m.photo_url ? (
+                        <img
+                          src={m.photo_url}
+                          alt=""
+                          referrerPolicy="no-referrer"
+                          onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-white/10 group-hover:border-teal-500/30 transition-colors"
+                        />
+                      ) : null}
+                      <div
+                        className={`w-10 h-10 rounded-full bg-gradient-to-br ${isOwner ? 'from-teal-500 to-cyan-600' : 'from-slate-700 to-slate-800'} flex items-center justify-center text-xs font-black text-white border-2 border-white/10 group-hover:border-teal-500/30 transition-colors`}
+                        style={m.photo_url ? { display: 'none' } : {}}
+                      >
+                        {m.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div
+                        className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-black/80 ${isOnline ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : 'bg-slate-600'}`}
+                        title={isOnline ? 'Online' : 'Offline'}
+                      />
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="text-sm font-bold text-white truncate">{m.name}</p>
+                        {isOwner ? (
+                          <span className="flex items-center gap-1 px-1.5 py-0.5 bg-teal-500/10 text-teal-400 text-[9px] font-bold rounded border border-teal-500/20 shrink-0">
+                            <Sparkles size={8} /> LEAD
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 px-1.5 py-0.5 bg-white/5 text-slate-500 text-[9px] font-bold rounded border border-white/5 shrink-0">
+                            MEMBER
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-slate-500 truncate">{m.branch || 'University Student'}</p>
+                    </div>
+
+                    {/* Action buttons — revealed on hover */}
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {user && project.owner_uid === user.uid && m.github && (
+                        <button onClick={() => openGithubIntel(m)} className="p-1.5 text-emerald-500/50 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all" title="GitHub Intel">
+                          <Github size={14} />
+                        </button>
+                      )}
+                      {user && project.owner_uid === user.uid && m.uid !== project.owner_uid && (
+                        <button onClick={() => handleRemoveMember(m.uid)} className="p-1.5 text-red-500/50 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all" title="Remove">
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => m.email ? window.open(`mailto:${m.email}`, '_blank') : alert('No email provided by this user.')}
+                        className="p-1.5 text-slate-600 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                        title="Send Email"
+                      >
+                        <Mail size={14} />
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+
+              {(!project.members_info || project.members_info.length === 0) && (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-white/5 flex items-center justify-center">
+                    <Users size={20} className="text-slate-600" />
+                  </div>
+                  <p className="text-sm text-slate-400 font-semibold">No team members yet</p>
+                  <p className="text-xs text-slate-600 mt-1">Be the first to join this project!</p>
+                </div>
+              )}
+            </div>
+
+            {/* Join / Leave action — full-width bottom bar */}
             {user && project.owner_uid !== user.uid && (
-              <button
-                onClick={handleJoin}
-                className={`w-full mt-6 font-bold py-3.5 rounded-xl transition-all shadow-lg active:scale-[0.98] ${isMember
-                    ? 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20'
+              <div className="px-5 pb-5">
+                <button
+                  onClick={handleJoin}
+                  className={`w-full font-bold py-3.5 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-sm ${isMember
+                      ? 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20'
+                      : isRequested
+                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20'
+                        : 'bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white shadow-lg shadow-teal-500/10'
+                    }`}
+                >
+                  {isMember
+                    ? <><Trash2 size={14} /> Leave Team</>
                     : isRequested
-                      ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/20'
-                      : 'bg-teal-600 hover:bg-teal-500 text-white shadow-teal-500/10'
-                  }`}
-              >
-                {isMember ? 'Leave Team' : isRequested ? 'Request Pending (Click to Cancel)' : 'Request to Join'}
-              </button>
+                      ? 'Request Pending (Click to Cancel)'
+                      : <><Sparkles size={14} /> Request to Join</>
+                  }
+                </button>
+              </div>
             )}
             {!user && (
-              <button onClick={login} className="w-full mt-6 bg-teal-600 hover:bg-teal-500 text-white font-bold py-3.5 rounded-xl transition-all">
-                Sign in to Join
-              </button>
+              <div className="px-5 pb-5">
+                <button onClick={login} className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-teal-500/10 flex items-center justify-center gap-2 text-sm">
+                  <Sparkles size={14} /> Sign in to Join
+                </button>
+              </div>
             )}
           </div>
 
