@@ -83,11 +83,16 @@ export default function Navbar() {
                     to="/profile" 
                     className="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10">
+                    <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-neon-purple/40 ring-2 ring-neon-purple/10 shrink-0">
                       <img 
-                        src={user.photo_url || `https://ui-avatars.com/api/?name=${user.email}&background=0D0D0D&color=fff`} 
+                        src={user.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.display_name || user.email)}&background=7000FF&color=fff&bold=true`} 
                         alt="Profile" 
                         className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.display_name || user.email)}&background=7000FF&color=fff&bold=true`;
+                        }}
                       />
                     </div>
                   </Link>

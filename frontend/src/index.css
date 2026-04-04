@@ -89,17 +89,23 @@ html.lenis, html.lenis body { height: auto; }
 .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; }
 
 /* ── Glass Styles ── */
+/* .glass: lightweight version for animated elements (no backdrop-filter = no forced reflows) */
 .glass {
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
+  background: rgba(255, 255, 255, 0.04);
   border: 0.5px solid rgba(255, 255, 255, 0.06);
 }
+/* .glass-strong: full frosted glass for STATIC elements only (navbar, sidebars) */
 .glass-strong {
   background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(60px);
   -webkit-backdrop-filter: blur(60px);
   border: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── Performance: content-visibility for off-screen cards ── */
+.perf-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
 }
 
 /* ── Gradient text helper ── */

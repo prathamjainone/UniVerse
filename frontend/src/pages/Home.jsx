@@ -182,7 +182,7 @@ export default function Home() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: i * 0.1 }}
-                  className="glass rounded-3xl p-6 border border-white/5 group"
+                  className="perf-card glass rounded-3xl p-6 border border-white/5 group"
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex gap-3 items-center">

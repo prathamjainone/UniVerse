@@ -314,7 +314,7 @@ export default function ContributionTracker({ projectId, isOwner }) {
                                                             <span className="text-xs text-slate-400 truncate flex-1">
                                                                 {commit.message}
                                                             </span>
-                                                            <span className="text-[10px] text-slate-600 shrink-0">
+                                                            <span className="text-[10px] text-slate-400 shrink-0 font-medium">
                                                                 {commit.author}
                                                             </span>
 
