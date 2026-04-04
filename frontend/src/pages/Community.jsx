@@ -5,11 +5,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronUp, ChevronDown, MessageSquare, Send, Trash2,
   TrendingUp, Clock, User, Sparkles, PenLine, Hash, X,
-  LogIn, Compass, Rocket, AlertCircle
+  LogIn, Compass, Rocket, AlertCircle, FileText, CheckCircle,
+  Award, Trophy, HelpCircle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import API_URL from '../api';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import CommunitySearch from '../components/CommunitySearch';
 
 /* ── helpers ── */
 function timeAgo(dateString) {
@@ -69,23 +74,127 @@ function VoteButtons({ post, userId, onVote }) {
   );
 }
 
-function CommentSection({ post, userId, userName, userPhoto, onAddComment }) {
+function CommentNode({ comment, allComments, post, userId, userName, userPhoto, onAddComment, onAcceptAnswer }) {
+  const [replyOpen, setReplyOpen] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const replies = allComments.filter((c) => c.parent_id === comment.id);
+  const isOwner = userId && post.author_uid === userId;
+  const isQuestion = post.post_type === 'question';
+
+  const handleReplySubmit = async () => {
+    if (!replyText.trim() || submitting) return;
+    setSubmitting(true);
+    await onAddComment(post.id, replyText.trim(), comment.id);
+    setReplyText('');
+    setSubmitting(false);
+    setReplyOpen(false);
+  };
+
+  return (
+    <div className="flex gap-3 group mt-3">
+      <img
+        src={comment.user_avatar || avatarUrl(comment.user_name)}
+        alt=""
+        className="w-7 h-7 rounded-full shrink-0 mt-0.5"
+      />
+      <div className="flex-grow min-w-0">
+        <div className="flex items-baseline justify-between gap-2">
+          <div className="flex items-baseline gap-2">
+            <span className="text-xs font-semibold text-white">{comment.user_name}</span>
+            <span className="text-[10px] text-slate-500">{timeAgo(comment.timestamp)}</span>
+            {comment.is_accepted && (
+              <span className="text-[10px] text-neon-teal bg-neon-teal/10 px-1.5 py-0.5 rounded flex items-center gap-1 font-medium">
+                <CheckCircle size={10} /> Accepted
+              </span>
+            )}
+          </div>
+          {isQuestion && isOwner && !comment.is_accepted && userId && (
+            <button
+              onClick={() => onAcceptAnswer(post.id, comment.id)}
+              className="opacity-0 group-hover:opacity-100 text-[10px] text-neon-teal hover:bg-neon-teal/10 px-2 py-0.5 rounded transition-all"
+            >
+              Accept Answer
+            </button>
+          )}
+        </div>
+        <div className="text-sm text-slate-300 leading-relaxed mt-0.5 break-words">
+          <ReactMarkdown
+            components={{
+              code({ inline, className, children, ...props }) {
+                const match = /language-(\w+)/.exec(className || '');
+                return !inline && match ? (
+                  <SyntaxHighlighter style={vscDarkPlus} language={match[1]} PreTag="div" className="text-xs my-1" {...props}>{String(children).replace(/\n$/, '')}</SyntaxHighlighter>
+                ) : (<code className="bg-white/10 px-1 rounded text-neon-teal font-mono text-xs" {...props}>{children}</code>);
+              }
+            }}
+          >
+            {comment.text}
+          </ReactMarkdown>
+        </div>
+        
+        {userId && (
+          <button
+            onClick={() => setReplyOpen(!replyOpen)}
+            className="text-[10px] font-medium text-slate-500 hover:text-white mt-1 transition-colors"
+          >
+            Reply
+          </button>
+        )}
+
+        {replyOpen && (
+          <div className="flex gap-2 items-center mt-2 relative">
+            <input
+              type="text"
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleReplySubmit()}
+              placeholder="Write a reply..."
+              className="w-full bg-white/5 text-xs text-white placeholder-slate-500 rounded-full px-3 py-1.5 pr-8 focus:outline-none focus:ring-1 focus:ring-neon-blue/30 border border-white/5"
+            />
+            <button
+              onClick={handleReplySubmit}
+              disabled={!replyText.trim() || submitting}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-neon-blue disabled:text-slate-600 hover:scale-110"
+            >
+              <Send size={12} />
+            </button>
+          </div>
+        )}
+
+        {replies.length > 0 && (
+          <div className="border-l border-white/10 pl-3 mt-1 space-y-1">
+            {replies.map(r => (
+              <CommentNode key={r.id} comment={r} allComments={allComments} post={post} userId={userId} userName={userName} userPhoto={userPhoto} onAddComment={onAddComment} onAcceptAnswer={onAcceptAnswer} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CommentSection({ post, userId, userName, userPhoto, onAddComment, onAcceptAnswer }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef(null);
   const comments = post.comments || [];
+  
+  // Get only top-level comments
+  const topLevelComments = comments.filter(c => !c.parent_id);
 
   const handleSubmit = async () => {
     if (!text.trim() || submitting) return;
     setSubmitting(true);
-    await onAddComment(post.id, text.trim());
+    await onAddComment(post.id, text.trim(), null);
     setText('');
     setSubmitting(false);
   };
 
   return (
-    <div>
+    <div className="w-full">
       <button
         onClick={() => {
           setOpen(!open);
@@ -108,29 +217,16 @@ function CommentSection({ post, userId, userName, userPhoto, onAddComment }) {
             transition={{ duration: 0.25 }}
             className="overflow-hidden"
           >
-            <div className="mt-4 pt-4 border-t border-white/5 space-y-3">
+            <div className="mt-4 pt-4 border-t border-white/5 space-y-1">
               {comments.length === 0 && (
                 <p className="text-xs text-slate-500 italic text-center py-2">No comments yet — start the conversation!</p>
               )}
-              {comments.map((c) => (
-                <div key={c.id} className="flex gap-3 group">
-                  <img
-                    src={c.user_avatar || avatarUrl(c.user_name)}
-                    alt=""
-                    className="w-7 h-7 rounded-full shrink-0 mt-0.5"
-                  />
-                  <div className="flex-grow min-w-0">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-xs font-semibold text-white">{c.user_name}</span>
-                      <span className="text-[10px] text-slate-500">{timeAgo(c.timestamp)}</span>
-                    </div>
-                    <p className="text-sm text-slate-300 leading-relaxed mt-0.5 break-words">{c.text}</p>
-                  </div>
-                </div>
+              {topLevelComments.map((c) => (
+                <CommentNode key={c.id} comment={c} allComments={comments} post={post} userId={userId} userName={userName} userPhoto={userPhoto} onAddComment={onAddComment} onAcceptAnswer={onAcceptAnswer} />
               ))}
 
               {userId && (
-                <div className="flex gap-3 items-center pt-2">
+                <div className="flex gap-3 items-center pt-3 mt-3 border-t border-white/5">
                   <img
                     src={userPhoto || avatarUrl(userName)}
                     alt=""
@@ -164,8 +260,9 @@ function CommentSection({ post, userId, userName, userPhoto, onAddComment }) {
   );
 }
 
-function PostCard({ post, userId, userName, userPhoto, onVote, onAddComment, onDelete, index }) {
+function PostCard({ post, userId, userName, userPhoto, onVote, onAddComment, onAcceptAnswer, onDelete, index }) {
   const isOwner = userId && post.author_uid === userId;
+  const isQuestion = post.post_type === 'question';
 
   return (
     <motion.div
@@ -173,7 +270,7 @@ function PostCard({ post, userId, userName, userPhoto, onVote, onAddComment, onD
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.35, delay: index * 0.06 }}
-      className="glass rounded-3xl border border-white/[0.06] hover:border-white/20 hover:shadow-[0_0_40px_rgba(112,0,255,0.15)] transition-all duration-500 group relative overflow-hidden"
+      className={`glass rounded-3xl border ${isQuestion && post.is_resolved ? 'border-neon-teal/30 shadow-[0_0_20px_rgba(0,255,204,0.1)]' : 'border-white/[0.06] hover:border-white/20 hover:shadow-[0_0_40px_rgba(112,0,255,0.15)]'} transition-all duration-500 group relative overflow-hidden`}
     >
       <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
       <div className="p-6 flex relative z-10">
@@ -191,7 +288,15 @@ function PostCard({ post, userId, userName, userPhoto, onVote, onAddComment, onD
                 className="w-10 h-10 rounded-full border border-white/10"
               />
               <div>
-                <h4 className="font-semibold text-sm text-white leading-tight">{post.author_name}</h4>
+                <h4 className="font-semibold text-sm text-white leading-tight flex items-center gap-2">
+                  {post.author_name}
+                  {post.community_name && (
+                    <>
+                      <span className="text-slate-500 font-normal">in</span>
+                      <span className="text-neon-purple text-xs bg-neon-purple/10 px-1.5 py-0.5 rounded">{post.community_name}</span>
+                    </>
+                  )}
+                </h4>
                 <p className="text-xs text-slate-500 mt-0.5">{timeAgo(post.created_at)}</p>
               </div>
             </div>
@@ -206,13 +311,42 @@ function PostCard({ post, userId, userName, userPhoto, onVote, onAddComment, onD
             )}
           </div>
 
-          {/* Title */}
-          {post.title && (
-            <h3 className="font-bold text-base text-white mb-2 leading-snug">{post.title}</h3>
-          )}
+          {/* Title and Post Type */}
+          <div className="mb-2">
+            {isQuestion && (
+              <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md mb-2 ${post.is_resolved ? 'bg-neon-teal/20 text-neon-teal' : 'bg-amber-500/20 text-amber-500'}`}>
+                {post.is_resolved ? <CheckCircle size={10} /> : <AlertCircle size={10} />}
+                {post.is_resolved ? 'Resolved' : 'Question'}
+              </span>
+            )}
+            {post.title && (
+              <h3 className="font-bold text-base text-white leading-snug">{post.title}</h3>
+            )}
+          </div>
 
           {/* Body */}
-          <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap break-words mb-3">{post.content}</p>
+          <div className="text-sm text-slate-300 leading-relaxed break-words mb-3">
+            <ReactMarkdown
+              components={{
+                code({ inline, className, children, ...props }) {
+                  const match = /language-(\w+)/.exec(className || '');
+                  return !inline && match ? (
+                    <SyntaxHighlighter style={vscDarkPlus} language={match[1]} PreTag="div" className="rounded-xl border border-white/10 my-2 text-xs" {...props}>
+                      {String(children).replace(/\n$/, '')}
+                    </SyntaxHighlighter>
+                  ) : (
+                    <code className="bg-white/10 px-1 py-0.5 rounded text-neon-teal font-mono text-xs" {...props}>
+                      {children}
+                    </code>
+                  );
+                },
+                p({ children }) { return <p className="mb-2 last:mb-0">{children}</p>; },
+                a({ children, href }) { return <a href={href} className="text-neon-blue hover:underline" target="_blank" rel="noopener noreferrer">{children}</a>; }
+              }}
+            >
+              {post.content}
+            </ReactMarkdown>
+          </div>
 
           {/* Tags */}
           {post.tags?.length > 0 && (
@@ -236,6 +370,7 @@ function PostCard({ post, userId, userName, userPhoto, onVote, onAddComment, onD
               userName={userName}
               userPhoto={userPhoto}
               onAddComment={onAddComment}
+              onAcceptAnswer={onAcceptAnswer}
             />
           </div>
         </div>
@@ -244,13 +379,15 @@ function PostCard({ post, userId, userName, userPhoto, onVote, onAddComment, onD
   );
 }
 
-function CreatePostCard({ user, onPost, login }) {
+function CreatePostCard({ user, onPost, login, communities }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState([]);
   const [expanded, setExpanded] = useState(false);
   const [posting, setPosting] = useState(false);
+  const [postType, setPostType] = useState('discussion');
+  const [communityId, setCommunityId] = useState('');
 
   const addTag = () => {
     const t = tagInput.trim().replace(/^#/, '');
@@ -263,10 +400,24 @@ function CreatePostCard({ user, onPost, login }) {
   const handleSubmit = async () => {
     if (!content.trim()) return;
     setPosting(true);
-    await onPost({ title: title.trim(), content: content.trim(), tags });
+    let communityName = '';
+    if (communityId) {
+      const comm = communities?.find(c => c.id === communityId);
+      if (comm) communityName = comm.name;
+    }
+    await onPost({ 
+      title: title.trim(), 
+      content: content.trim(), 
+      tags,
+      post_type: postType,
+      community_id: communityId || null,
+      community_name: communityName || null
+    });
     setTitle('');
     setContent('');
     setTags([]);
+    setCommunityId('');
+    setPostType('discussion');
     setExpanded(false);
     setPosting(false);
   };
@@ -313,6 +464,26 @@ function CreatePostCard({ user, onPost, login }) {
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-3"
               >
+                <div className="flex gap-2">
+                  <select
+                    value={postType}
+                    onChange={(e) => setPostType(e.target.value)}
+                    className="bg-white/5 text-white text-xs border border-white/10 rounded-lg px-2 py-1.5 focus:outline-none"
+                  >
+                    <option value="discussion" className="bg-slate-900">Discussion</option>
+                    <option value="question" className="bg-slate-900">Question</option>
+                  </select>
+                  <select
+                    value={communityId}
+                    onChange={(e) => setCommunityId(e.target.value)}
+                    className="bg-white/5 text-white text-xs border border-white/10 rounded-lg px-2 py-1.5 focus:outline-none max-w-[150px] truncate"
+                  >
+                    <option value="" className="bg-slate-900">Global Feed</option>
+                    {communities?.map(c => (
+                      <option key={c.id} value={c.id} className="bg-slate-900">{c.name}</option>
+                    ))}
+                  </select>
+                </div>
                 <input
                   type="text"
                   value={title}
@@ -413,13 +584,44 @@ export default function Community() {
   const userName = user?.display_name || 'Guest';
   const userPhoto = user?.photo_url || null;
 
+  const [communities, setCommunities] = useState([]);
+  const [selectedCommunity, setSelectedCommunity] = useState(null);
+  const [topContributors, setTopContributors] = useState([]);
+  const [trendingQuestions, setTrendingQuestions] = useState([]);
+
+  const fetchSidebarData = useCallback(async () => {
+    try {
+      const [leadRes, trendRes] = await Promise.all([
+        fetch(`${API_URL}/api/community/leaderboard/top`),
+        fetch(`${API_URL}/api/community/trending/questions`)
+      ]);
+      if (leadRes.ok) setTopContributors(await leadRes.json());
+      if (trendRes.ok) setTrendingQuestions(await trendRes.json());
+    } catch {}
+  }, []);
+
+  const fetchCommunities = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/communities/`);
+      if (res.ok) {
+        const data = await res.json();
+        setCommunities(data);
+      }
+    } catch {
+      // silent
+    }
+  }, []);
+
   /* ── Fetch ── */
   const fetchPosts = useCallback(async () => {
     try {
       setError(null);
-      const url = activeTab === 'my'
-        ? `${API_URL}/api/community/user/${userId}`
-        : `${API_URL}/api/community/?sort=${sortBy}`;
+      let url = `${API_URL}/api/community/?sort=${sortBy}`;
+      if (activeTab === 'my') {
+        url = `${API_URL}/api/community/user/${userId}`;
+      } else if (selectedCommunity) {
+        url += `&community_id=${selectedCommunity}`;
+      }
       const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
@@ -430,12 +632,14 @@ export default function Community() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, sortBy, userId]);
+  }, [activeTab, sortBy, userId, selectedCommunity]);
 
   useEffect(() => {
     setLoading(true);
     fetchPosts();
-  }, [fetchPosts]);
+    fetchCommunities();
+    fetchSidebarData();
+  }, [fetchPosts, fetchCommunities, fetchSidebarData]);
 
   /* ── Actions ── */
   const handleVote = async (postId, vote) => {
@@ -464,7 +668,7 @@ export default function Community() {
     }
   };
 
-  const handleAddComment = async (postId, text) => {
+  const handleAddComment = async (postId, text, parentId = null) => {
     if (!userId) return login();
     try {
       const res = await fetch(`${API_URL}/api/community/${postId}/comments`, {
@@ -475,6 +679,7 @@ export default function Community() {
           user_name: userName,
           user_avatar: userPhoto,
           text,
+          parent_id: parentId
         }),
       });
       const data = await res.json();
@@ -490,7 +695,36 @@ export default function Community() {
     }
   };
 
-  const handlePost = async ({ title, content, tags }) => {
+  const handleAcceptAnswer = async (postId, commentId) => {
+    if (!userId) return;
+    try {
+      const res = await fetch(`${API_URL}/api/community/${postId}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          comment_id: commentId
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPosts((prev) =>
+          prev.map((p) => {
+            if (p.id !== postId) return p;
+            const updatedComments = p.comments?.map(c => ({
+              ...c,
+              is_accepted: c.id === commentId
+            }));
+            return { ...p, comments: updatedComments, is_resolved: true };
+          })
+        );
+      }
+    } catch {
+      /* silent */
+    }
+  };
+
+  const handlePost = async ({ title, content, tags, post_type, community_id, community_name }) => {
     try {
       const res = await fetch(`${API_URL}/api/community/`, {
         method: 'POST',
@@ -499,9 +733,12 @@ export default function Community() {
           author_uid: userId,
           author_name: userName,
           author_avatar: userPhoto,
-          title: title || 'Untitled',
+          title: title || '',
           content,
           tags,
+          post_type: post_type || 'discussion',
+          community_id: community_id || null,
+          community_name: community_name || null
         }),
       });
       if (res.ok) {
@@ -547,7 +784,11 @@ export default function Community() {
           )}
         </div>
 
-        <CreatePostCard user={user} onPost={handlePost} login={login} />
+        <div className="mb-4">
+          <CommunitySearch posts={posts} communities={communities} onSelectCommunity={(id) => { setSelectedCommunity(id); setActiveTab('feed'); }} />
+        </div>
+
+        <CreatePostCard user={user} onPost={handlePost} login={login} communities={communities} />
 
         {/* Tabs + Sort */}
         <div className="flex items-center justify-between">
@@ -578,7 +819,7 @@ export default function Community() {
               {!user && <button onClick={login} className="px-6 py-2.5 bg-gradient-to-r from-neon-purple to-neon-blue text-white text-sm font-semibold rounded-full hover:shadow-[0_0_20px_rgba(112,0,255,0.3)] transition-all">Sign In</button>}
             </div>
           ) : (
-            <AnimatePresence>{posts.map((post, i) => <PostCard key={post.id} post={post} userId={userId} userName={userName} userPhoto={userPhoto} onVote={handleVote} onAddComment={handleAddComment} onDelete={handleDelete} index={i} />)}</AnimatePresence>
+            <AnimatePresence>{posts.map((post, i) => <PostCard key={post.id} post={post} userId={userId} userName={userName} userPhoto={userPhoto} onVote={handleVote} onAddComment={handleAddComment} onAcceptAnswer={handleAcceptAnswer} onDelete={handleDelete} index={i} />)}</AnimatePresence>
           )}
         </div>
       </div>
@@ -643,6 +884,30 @@ export default function Community() {
               </div>
             </div>
 
+            {/* Top Communities */}
+            <div className="glass-strong rounded-2xl p-5 border border-white/[0.06]">
+              <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-slate-200">
+                <Hash size={14} className="text-neon-blue" /> Top Communities
+              </h4>
+              <div className="space-y-1">
+                <button
+                  onClick={() => { setSelectedCommunity(null); setActiveTab('feed'); }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs transition-colors text-left ${!selectedCommunity && activeTab === 'feed' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                >
+                  <Sparkles size={14} className={!selectedCommunity ? 'text-neon-blue' : ''} /> Global Feed
+                </button>
+                {communities.slice(0, 5).map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => { setSelectedCommunity(c.id); setActiveTab('feed'); }}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs transition-colors text-left ${selectedCommunity === c.id ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                  >
+                    <span className="text-sm">{c.icon}</span> {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Join CTA */}
             {!user && (
               <div className="glass rounded-2xl p-5 border border-white/[0.06] text-center">
@@ -666,8 +931,12 @@ export default function Community() {
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
         >
           <div className="max-w-2xl mx-auto py-6 pb-16">
+            <div className="mb-4">
+              <CommunitySearch posts={posts} communities={communities} onSelectCommunity={(id) => { setSelectedCommunity(id); setActiveTab('feed'); }} />
+            </div>
+
             {/* Post composer */}
-            <CreatePostCard user={user} onPost={handlePost} login={login} />
+            <CreatePostCard user={user} onPost={handlePost} login={login} communities={communities} />
 
             {/* Tabs + Sort */}
             <div className="flex items-center justify-between mb-5">
@@ -768,6 +1037,7 @@ export default function Community() {
                       userPhoto={userPhoto}
                       onVote={handleVote}
                       onAddComment={handleAddComment}
+                      onAcceptAnswer={handleAcceptAnswer}
                       onDelete={handleDelete}
                       index={i}
                     />
@@ -785,13 +1055,26 @@ export default function Community() {
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
         >
           <div className="flex flex-col gap-5 pb-8">
-            {/* Trending tags */}
+            {/* Trending Questions */}
             <div className="glass-strong rounded-2xl p-5 border border-white/[0.06]">
               <h4 className="font-bold text-sm mb-3 flex items-center gap-2">
-                <TrendingUp size={14} className="text-neon-teal" /> Trending Topics
+                <HelpCircle size={14} className="text-amber-500" /> Trending Questions
               </h4>
-              <TrendingTags posts={posts} />
+              <div className="space-y-3">
+                {trendingQuestions.length === 0 ? (
+                   <p className="text-xs text-slate-500 italic">No questions yet</p>
+                ) : trendingQuestions.map(q => (
+                  <div key={q.id} className="group cursor-pointer">
+                    <p className="text-xs text-slate-300 group-hover:text-amber-400 transition-colors line-clamp-2 leading-relaxed">{q.title}</p>
+                    <div className="flex gap-2 text-[10px] text-slate-500 mt-1.5">
+                      <span className="flex items-center gap-0.5"><ChevronUp size={10} /> {q.upvotes}</span>
+                      <span className="flex items-center gap-0.5"><MessageSquare size={10} /> {q.comment_count}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
+
 
             {/* Community stats */}
             <div className="glass-strong rounded-2xl p-5 border border-white/[0.06]">
@@ -824,34 +1107,3 @@ export default function Community() {
   );
 }
 
-/* ── Trending Tags helper ── */
-function TrendingTags({ posts }) {
-  const tagCounts = {};
-  posts.forEach((p) => {
-    (p.tags || []).forEach((t) => {
-      tagCounts[t] = (tagCounts[t] || 0) + 1;
-    });
-  });
-  const sorted = Object.entries(tagCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6);
-
-  if (sorted.length === 0) {
-    return <p className="text-xs text-slate-500 italic">No tags yet</p>;
-  }
-
-  return (
-    <div className="space-y-2">
-      {sorted.map(([tag, count]) => (
-        <div key={tag} className="flex justify-between items-center group">
-          <span className="text-xs text-neon-blue/70 group-hover:text-neon-blue transition-colors">
-            #{tag}
-          </span>
-          <span className="text-[10px] text-slate-500 bg-white/5 px-2 py-0.5 rounded-full">
-            {count} {count === 1 ? 'post' : 'posts'}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}

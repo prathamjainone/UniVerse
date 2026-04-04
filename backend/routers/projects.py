@@ -99,7 +99,7 @@ def delete_project(project_id: str):
 @router.post("/", response_model=ProjectBase)
 def create_project(project: ProjectBase):
     data = project.model_dump(exclude={'id'})
-    data['created_at'] = project.created_at.strftime('%Y-%m-%dT%H:%M:%S')
+    data['created_at'] = project.created_at.strftime('%Y-%m-%dT%H:%M:%SZ')
     data['members'] = [project.owner_uid]
     data['upvoted_by'] = []
     data['comments'] = []
