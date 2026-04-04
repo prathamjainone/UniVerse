@@ -15,18 +15,32 @@ export default function ProjectLayout() {
   const [error, setError] = useState(null);
 
   const fetchProject = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/projects/${id}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      
+      const res = await fetch(`${API_URL}/api/projects/${id}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) {
+        throw new Error(`Server returned status: ${res.status}`);
+      }
+      
       const data = await res.json();
       if (data.success) {
         setProject(data.project);
         setError(null);
       } else {
-        setError('Project not found');
+        setError(data.error || 'Project not found');
       }
     } catch (err) {
-      console.error("Fetch error", err);
-      if (!project) setError('Could not connect to server');
+      console.error("Fetch error:", err);
+      if (err.name === 'AbortError') {
+        setError('Server is taking too long to respond. This might be a cold start for Render (wait 30s and refresh).');
+      } else {
+        setError(`Connection failed: ${err.message}`);
+      }
     } finally {
       setLoading(false);
     }
