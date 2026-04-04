@@ -4,6 +4,18 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          three: ['three', '@react-three/fiber', '@react-three/drei', '@react-three/postprocessing'],
+          firebase: ['firebase'],
+          motion: ['framer-motion', 'gsap'],
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({
