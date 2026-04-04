@@ -1,0 +1,52 @@
+
+> frontend@0.0.0 lint
+> eslint .
+
+
+C:\Users\jains\OneDrive\Desktop\Uni-Verse\frontend\src\components\ContributionTracker.jsx
+   6:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  24:27  error  'Icon' is defined but never used                                               no-unused-vars
+  88:18  error  'err' is defined but never used                                                no-unused-vars
+
+C:\Users\jains\OneDrive\Desktop\Uni-Verse\frontend\src\components\WarRoomChat.jsx
+  284:6  warning  React Hook useEffect has a missing dependency: 'fetchRepoData'. Either include it or remove the dependency array                                                         react-hooks/exhaustive-deps
+  377:6  warning  React Hook useEffect has missing dependencies: 'createPeerConnection', 'handleOffer', 'leaveHuddle', and 'user.uid'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\jains\OneDrive\Desktop\Uni-Verse\frontend\src\context\AuthContext.jsx
+   16:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  14 |   useEffect(() => {
+  15 |     if (!user) {
+> 16 |       setOnlineUsers([]);
+     |       ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  17 |       return;
+  18 |     }
+  19 |                                                                                         react-hooks/set-state-in-effect
+   65:18  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  63 |     if (!auth) {
+  64 |       const saved = localStorage.getItem('universe_user');
+> 65 |       if (saved) setUser(JSON.parse(saved));
+     |                  ^^^^^^^ Avoid calling setState() directly within an effect
+  66 |       setLoading(false);
+  67 |       return;
+  68 |     }  react-hooks/set-state-in-effect
+  160:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         react-refresh/only-export-components
+
+C:\Users\jains\OneDrive\Desktop\Uni-Verse\frontend\src\pages\ProjectDetails.jsx
+  60:6  warning  React Hook useEffect has a missing dependency: 'fetchProject'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 9 problems (6 errors, 3 warnings)
+

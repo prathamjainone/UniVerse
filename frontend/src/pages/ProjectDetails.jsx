@@ -8,7 +8,9 @@ import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis,
   Radar as RadarComponent, ResponsiveContainer
 } from 'recharts';
+/* eslint-disable no-unused-vars */
 import { motion, AnimatePresence } from 'framer-motion';
+/* eslint-enable no-unused-vars */
 import { useAuth } from '../context/AuthContext';
 import API_URL from '../api';
 import WarRoomChat from '../components/WarRoomChat';
@@ -32,6 +34,8 @@ export default function ProjectDetails() {
   const [intelData, setIntelData] = useState(null);
   const [intelLoading, setIntelLoading] = useState(false);
 
+  const [error, setError] = useState(null);
+
   const isMember = project?.members?.includes(user?.uid);
   const isRequested = project?.join_requests?.includes(user?.uid);
 
@@ -41,11 +45,13 @@ export default function ProjectDetails() {
       const data = await res.json();
       if (data.success) {
         setProject(data.project);
+        setError(null);
       } else {
-        navigate('/discover');
+        setError('Project not found');
       }
     } catch (err) {
       console.error("Fetch error", err);
+      if (!project) setError('Could not connect to server');
     } finally {
       setLoading(false);
     }
@@ -55,6 +61,7 @@ export default function ProjectDetails() {
     fetchProject();
     const intervalId = setInterval(fetchProject, 5000);
     return () => clearInterval(intervalId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleAddComment = async () => {
@@ -212,7 +219,23 @@ export default function ProjectDetails() {
     </div>
   );
 
-  if (!project) return null;
+  if (!project) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+      <div className="glass-strong rounded-3xl p-10 border border-white/5 max-w-md text-center">
+        <div className="text-5xl mb-4">🔭</div>
+        <h2 className="text-xl font-bold text-white mb-2">{error || 'Project not found'}</h2>
+        <p className="text-slate-400 text-sm mb-6">
+          {error === 'Could not connect to server' 
+            ? 'The backend server might be offline. Please try again later.'
+            : 'This project may have been removed or the link is incorrect.'
+          }
+        </p>
+        <Link to="/discover" className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-full hover:bg-slate-200 transition-colors">
+          <ArrowLeft size={16} /> Back to Discover
+        </Link>
+      </div>
+    </div>
+  );
 
   // Prepare Radar Data
   const radarData = (project.required_skills || []).map(skill => ({

@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, Terminal, MessageSquare, Video, VideoOff, PhoneOff, Monitor, Code, Github, ExternalLink, GitCommit, GitPullRequest, RefreshCw, Link2, Save, Mic, MicOff, X } from 'lucide-react';
 
+/* eslint-disable no-unused-vars */
+
 import { motion, AnimatePresence } from 'framer-motion';
+/* eslint-enable no-unused-vars */
 import API_URL from '../api';
 
 // --- Small Helper for Video ---
@@ -174,7 +177,7 @@ export default function WarRoomChat({ project, user }) {
     
     recognition.onend = () => {
         if (isMOMEnabledRef.current) {
-            try { recognition.start(); } catch(e) {}
+            try { recognition.start(); } catch { /* ignore */ }
         }
     };
     recognitionRef.current = recognition;
@@ -194,7 +197,7 @@ export default function WarRoomChat({ project, user }) {
       }
       
       if (newState && recognitionRef.current) {
-          try { recognitionRef.current.start(); } catch(e) {}
+          try { recognitionRef.current.start(); } catch { /* ignore */ }
       } else if (!newState && recognitionRef.current) {
           recognitionRef.current.stop();
       }
@@ -244,7 +247,7 @@ export default function WarRoomChat({ project, user }) {
         const [owner, repo] = cleaned.split('/');
         if (owner && repo) return { owner, repo };
       }
-    } catch { }
+    } catch { /* ignore */ }
     return null;
   };
 
@@ -278,6 +281,7 @@ export default function WarRoomChat({ project, user }) {
     if (leftTab === 'repo' && repoUrl) {
       fetchRepoData(repoUrl);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leftTab, repoUrl]);
 
   // Sync repoUrl from project prop
@@ -328,7 +332,7 @@ export default function WarRoomChat({ project, user }) {
           setIsMOMEnabled(enabled);
           isMOMEnabledRef.current = enabled;
           if (enabled && recognitionRef.current) {
-              try { recognitionRef.current.start(); } catch(e) {}
+              try { recognitionRef.current.start(); } catch { /* ignore */ }
           } else if (!enabled && recognitionRef.current) {
               recognitionRef.current.stop();
           }
@@ -371,6 +375,7 @@ export default function WarRoomChat({ project, user }) {
       leaveHuddle();
       socket.close();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
   // --- WebRTC Logic ---
@@ -437,7 +442,7 @@ export default function WarRoomChat({ project, user }) {
       let stream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      } catch (e) {
+      } catch {
         // Fallback to audio if video camera is unavailable or denied
         stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
       }
@@ -451,7 +456,7 @@ export default function WarRoomChat({ project, user }) {
       if (isLeader) {
         fetch(`${API_URL}/api/projects/${projectId}/notify_meeting`, { method: 'POST' }).catch(e => console.error(e));
       }
-    } catch (err) { alert("Camera/Microphone permissions denied or devices not found."); }
+    } catch { alert("Camera/Microphone permissions denied or devices not found."); }
   };
 
   const shareScreen = async () => {

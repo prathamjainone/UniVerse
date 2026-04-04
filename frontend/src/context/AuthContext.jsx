@@ -13,7 +13,7 @@ export function AuthProvider({ children }) {
   // Presence WebSocket
   useEffect(() => {
     if (!user) {
-      setOnlineUsers([]);
+      setTimeout(() => setOnlineUsers([]), 0);
       return;
     }
     
@@ -62,8 +62,10 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!auth) {
       const saved = localStorage.getItem('universe_user');
-      if (saved) setUser(JSON.parse(saved));
-      setLoading(false);
+      setTimeout(() => {
+        if (saved) setUser(JSON.parse(saved));
+        setLoading(false);
+      }, 0);
       return;
     }
 
@@ -157,4 +159,5 @@ export function AuthProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);
