@@ -319,16 +319,16 @@ export default function Discover() {
                           </div>
                           
                           <h3 className="text-xl font-bold mb-2 text-white relative z-10">{project.title}</h3>
-                          <p className="text-slate-400 text-sm mb-4 flex-grow relative z-10 line-clamp-3">
+                          <p className="text-slate-400 group-hover:text-white transition-colors duration-300 text-sm mb-4 flex-grow relative z-10 line-clamp-3">
                             {project.description}
                           </p>
                           
                           {project.required_skills && project.required_skills.length > 0 && (
                             <div className="relative z-10 mb-4">
-                              <div className="text-xs text-slate-500 mb-2 font-medium">SKILLS NEEDED</div>
+                              <div className="text-xs text-slate-500 group-hover:text-white/80 transition-colors duration-300 mb-2 font-medium">SKILLS NEEDED</div>
                               <div className="flex flex-wrap gap-2">
                                 {project.required_skills.slice(0, 3).map(role => (
-                                  <span key={role} className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-dark-surface border border-white/5">
+                                  <span key={role} className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-dark-surface group-hover:bg-black/30 group-hover:text-white transition-all duration-300 border border-white/5">
                                     {role}
                                   </span>
                                 ))}

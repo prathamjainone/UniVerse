@@ -20,7 +20,12 @@ const Community = lazy(() => import('./pages/Community'));
 const Discover = lazy(() => import('./pages/Discover'));
 const Onboarding = lazy(() => import('./pages/Onboarding'));
 const Profile = lazy(() => import('./pages/Profile'));
-const ProjectDetails = lazy(() => import('./pages/ProjectDetails'));
+const ProjectLayout = lazy(() => import('./pages/project/ProjectLayout'));
+const Overview = lazy(() => import('./pages/project/Overview'));
+const Discussion = lazy(() => import('./pages/project/Discussion'));
+const WarRoom = lazy(() => import('./pages/project/WarRoom'));
+const Contributions = lazy(() => import('./pages/project/Contributions'));
+const Members = lazy(() => import('./pages/project/Members'));
 
 function PageFallback() {
   return (
@@ -54,7 +59,13 @@ function AnimatedRoutes() {
         <Route path="/discover" element={<Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><Discover /></motion.div></Suspense>} />
         <Route path="/community" element={<Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><Community /></motion.div></Suspense>} />
         <Route path="/onboarding" element={<Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><Onboarding /></motion.div></Suspense>} />
-        <Route path="/projects/:id" element={<Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><ProjectDetails /></motion.div></Suspense>} />
+        <Route path="/projects/:id" element={<Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><ProjectLayout /></motion.div></Suspense>}>
+          <Route index element={<Overview />} />
+          <Route path="discussion" element={<Discussion />} />
+          <Route path="warroom" element={<WarRoom />} />
+          <Route path="contributions" element={<Contributions />} />
+          <Route path="members" element={<Members />} />
+        </Route>
         <Route path="/profile" element={
           <OnboardingGuard><Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><Profile /></motion.div></Suspense></OnboardingGuard>
         } />

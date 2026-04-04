@@ -47,15 +47,7 @@ export default function Landing() {
 
       {/* --- HERO SECTION --- */}
       <section id="hero" className="relative min-h-[100vh] flex flex-col items-center justify-center text-center px-4 pt-32 pb-20 z-10">
-        <motion.div
-           initial={{ opacity: 0, scale: 0.9 }}
-           animate={{ opacity: 1, scale: 1 }}
-           transition={{ duration: 1, ease: 'easeOut' }}
-           className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-white/10 mb-8 mt-12 backdrop-blur-md cursor-expand"
-        >
-          <span className="w-2 h-2 rounded-full bg-neon-teal animate-pulse-glow" />
-          <span className="text-sm font-medium tracking-wide text-white/90">Uni-Verse 2.0 is Live</span>
-        </motion.div>
+
 
         <h1 className="heading-hero font-outfit mb-6 text-white perspective-[1000px] flex flex-col items-center justify-center gap-1 md:gap-2 leading-tight">
           <span>A Platform For Students To</span>
@@ -138,7 +130,7 @@ export default function Landing() {
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Persistent War Rooms</h3>
               <p className="text-slate-400 mb-6 text-sm flex-grow">Dedicated virtual workspaces for your team. Integrated task boards, chat, and architecture diagrams all in one place.</p>
-              <button className="text-neon-purple font-medium flex items-center gap-1 text-sm hover:gap-2 transition-all w-fit cursor-expand">Explore Rooms <ChevronRight size={16}/></button>
+
            </GlowCard>
 
            {/* Bottom right card */}
@@ -148,7 +140,7 @@ export default function Landing() {
               </div>
               <h3 className="text-xl font-bold text-white mb-3">GitHub Integration</h3>
               <p className="text-slate-400 mb-6 text-sm flex-grow">Connect your repos to automatically display tech stacks and prove your engineering chops through verified commits.</p>
-              <button className="text-neon-teal font-medium flex items-center gap-1 text-sm hover:gap-2 transition-all w-fit cursor-expand">Learn More <ChevronRight size={16}/></button>
+
            </GlowCard>
         </div>
       </RevealSection>
