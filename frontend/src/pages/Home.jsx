@@ -1,233 +1,278 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, ArrowUp, Share2, PlusCircle, Trash2 } from 'lucide-react';
+/* eslint-disable no-unused-vars */
+import { motion, AnimatePresence } from 'framer-motion';
+/* eslint-enable no-unused-vars */
+import { Heart, MessageSquare, Share2, Award, Zap, TrendingUp, Code, LogIn, Compass, Rocket } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 import API_URL from '../api';
-import CreatePostModal from '../components/CreatePostModal';
 
 export default function Home() {
-  const [posts, setPosts] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeReply, setActiveReply] = useState(null);
-  const [replyTexts, setReplyTexts] = useState({});
   const { user, login } = useAuth();
+  const [activeTab, setActiveTab] = useState('feed');
+  const [likedPosts, setLikedPosts] = useState(new Set());
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [newPostText, setNewPostText] = useState('');
+  const [posting, setPosting] = useState(false);
 
-  const fetchPosts = () => {
-    fetch(`${API_URL}/api/community`)
-      .then(res => res.json())
-      .then(data => setPosts(data))
-      .catch(err => console.error("API error", err));
-  };
-
+  // Fetch community posts from API
   useEffect(() => {
-    fetchPosts();
+    setLoading(true);
+    fetch(`${API_URL}/api/community/posts`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setPosts(data);
+        }
+      })
+      .catch(() => {
+        // API unavailable — posts stays empty
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  const handleCreatePost = async (postData) => {
-    if (!user) return;
+  const handleLike = (id) => {
+    setLikedPosts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
+      return newSet;
+    });
+  };
+
+  const handlePost = async () => {
+    if (!newPostText.trim()) return;
+    if (!user) return login();
     
-    const payload = {
-      ...postData,
-      author_uid: user.uid,
-      author_name: user.display_name,
-      upvotes: 0
-    };
-
+    setPosting(true);
     try {
-      const res = await fetch(`${API_URL}/api/community`, {
+      await fetch(`${API_URL}/api/community/posts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          user_id: user.uid,
+          user_name: user.display_name,
+          content: newPostText.trim()
+        })
       });
-      if (res.ok) fetchPosts();
-    } catch (err) {
-      console.error("Failed to submit post", err);
-    }
-  };
-
-  const handleUpvote = async (postId) => {
-    if (!user) return login();
-
-    try {
-      // Optimistic update assumes success is too complex with the toggle. Let's just await.
-      const res = await fetch(`${API_URL}/api/community/${postId}/upvote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user.uid })
-      });
+      setNewPostText('');
+      const res = await fetch(`${API_URL}/api/community/posts`);
       const data = await res.json();
-      if (data.success) {
-        setPosts(posts.map(p => p.id === postId ? { ...p, upvotes: data.new_upvotes, upvoted_by: data.upvoted_by } : p));
-      }
-    } catch (err) {
-      console.error("Failed to upvote", err);
+      if (Array.isArray(data) && data.length > 0) setPosts(data);
+    } catch {
+      // Silently handle error
+    } finally {
+      setPosting(false);
     }
   };
 
-  const handleAddComment = async (postId) => {
-    if (!user) return login();
-    const text = replyTexts[postId];
-    if (!text?.trim()) return;
-
-    try {
-      const res = await fetch(`${API_URL}/api/community/${postId}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user.uid, user_name: user.display_name, text })
-      });
-      if (res.ok) {
-         setReplyTexts(prev => ({ ...prev, [postId]: "" }));
-         setActiveReply(null);
-         fetchPosts();
-      }
-    } catch (err) {
-      console.error("Failed to add comment", err);
-    }
-  };
-
-  const handleDelete = async (postId) => {
-    if (!window.confirm("Are you sure you want to delete this post?")) return;
-    try {
-      const res = await fetch(`${API_URL}/api/community/${postId}`, { method: 'DELETE' });
-      if (res.ok) fetchPosts();
-    } catch (err) {
-      console.error("Failed to delete post", err);
-    }
-  };
+  const displayName = user?.display_name || 'Guest';
+  const avatarUrl = user?.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&bg=0D0D0D&color=fff`;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center bg-white/[0.02] border border-white/5 p-8 rounded-3xl backdrop-blur-md">
-        <div>
-          <h1 className="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 mb-2">
-            Community Campus
-          </h1>
-          <p className="text-slate-400 text-lg max-w-xl">
-            Break out of your branch. Connect, share knowledge, and build the ultimate interdisciplinary team.
-          </p>
+    <div className="pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col lg:flex-row gap-8 relative z-10">
+      
+      {/* Left Sidebar */}
+      <div className="w-full lg:w-1/4">
+        <div className="sticky top-28 flex flex-col gap-6">
+          <div className="glass-strong rounded-3xl p-6 border border-white/5">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 rounded-full overflow-hidden border border-white/10">
+                <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">{displayName}</h3>
+                <p className="text-slate-400 text-sm">{user?.branch || 'Student Developer'}</p>
+              </div>
+            </div>
+            {user ? (
+              <div className="space-y-2">
+                <Link
+                  to="/profile"
+                  className="block w-full py-3 glass border border-white/10 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors text-center text-slate-300"
+                >
+                  View Profile
+                </Link>
+              </div>
+            ) : (
+              <button
+                onClick={login}
+                className="w-full py-3 glass border border-white/10 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors flex items-center justify-center gap-2 text-neon-blue"
+              >
+                <LogIn size={16} /> Sign in to join
+              </button>
+            )}
+          </div>
         </div>
-        <button 
-          onClick={user ? () => setIsModalOpen(true) : login}
-          className="hidden md:flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white px-6 py-3 rounded-xl transition-all font-medium border border-white/10 hover:border-white/20 hover:shadow-lg"
-        >
-          <PlusCircle size={20} />
-          <span>{user ? 'New Post' : 'Sign in to Post'}</span>
-        </button>
       </div>
 
-      <CreatePostModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onSubmit={handleCreatePost}
-      />
-
-      <div className="grid gap-6 max-w-4xl">
-        {posts.map(post => {
-          const isUpvoted = user && post.upvoted_by?.includes(user.uid);
-          return (
-          <div key={post.id} className="group p-6 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-purple-500/40 hover:bg-white/[0.04] transition-all backdrop-blur-sm shadow-xl flex gap-6">
-            
-            <div className="flex flex-col items-center gap-2">
+      {/* Main Feed */}
+      <div className="w-full lg:w-2/4">
+        {/* Post Input */}
+        <div className="glass-strong rounded-3xl p-4 mb-8 border border-white/5 flex gap-4">
+          <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 mt-1">
+             <img src={avatarUrl} alt="You" className="w-full h-full object-cover" />
+          </div>
+          <div className="flex-grow">
+            <textarea 
+              placeholder={user ? "Share an update on your project..." : "Log in to post updates..."} 
+              value={newPostText}
+              onChange={(e) => setNewPostText(e.target.value)}
+              disabled={!user}
+              className="w-full bg-transparent border-none focus:ring-0 focus:outline-none resize-none text-white placeholder-slate-500 h-14 disabled:opacity-50"
+            ></textarea>
+            <div className="flex justify-between items-center mt-2 border-t border-white/10 pt-3">
+              <div className="flex gap-2">
+                <button className="p-2 text-slate-400 hover:text-white glass rounded-lg transition-colors"><Zap size={16} /></button>
+                <button className="p-2 text-slate-400 hover:text-white glass rounded-lg transition-colors"><Code size={16} /></button>
+              </div>
               <button 
-                onClick={() => handleUpvote(post.id)}
-                className={`p-2 rounded-lg transition-colors ${isUpvoted ? 'bg-purple-500/20 text-purple-400' : 'hover:bg-white/10 hover:text-purple-400 text-slate-400'}`}
+                onClick={user ? handlePost : login}
+                disabled={posting}
+                className="px-6 py-2 bg-white text-black font-semibold rounded-full hover:bg-slate-200 transition-colors text-sm disabled:opacity-50"
               >
-                <ArrowUp size={24} strokeWidth={2.5} />
+                {user ? (posting ? 'Posting...' : 'Post Update') : 'Log In to Post'}
               </button>
-              <span className={`font-bold ${isUpvoted ? 'text-purple-400' : 'text-slate-200'}`}>{post.upvotes}</span>
-            </div>
-
-            <div className="flex-1">
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-sm shadow-inner text-white">
-                    {post.author_name.charAt(0)}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium text-slate-300">{post.author_name}</h3>
-                    <span className="text-xs text-slate-500">• {new Date(post.created_at).toLocaleDateString()}</span>
-                  </div>
-                </div>
-                {user && post.author_uid === user.uid && (
-                  <button onClick={() => handleDelete(post.id)} className="text-slate-500 hover:text-red-400 transition-colors p-1" title="Delete Post">
-                    <Trash2 size={16} />
-                  </button>
-                )}
-              </div>
-              
-              <h2 className="text-xl font-bold text-slate-100 mb-2 group-hover:text-purple-300 transition-colors">
-                {post.title}
-              </h2>
-              <p className="text-slate-400 mb-5 leading-relaxed whitespace-pre-wrap">
-                {post.content}
-              </p>
-              
-              <div className="flex items-center justify-between mt-auto">
-                <div className="flex flex-wrap gap-2">
-                  {post.tags.map((tag, idx) => (
-                    <span key={idx} className="px-3 py-1 text-xs font-medium rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/20">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                
-                <div className="flex items-center gap-4 text-slate-400">
-                  <button onClick={() => setActiveReply(activeReply === post.id ? null : post.id)} className={`flex items-center gap-1.5 hover:text-white transition-colors text-sm font-medium ${activeReply === post.id ? 'text-white' : ''}`}>
-                    <MessageSquare size={18} />
-                    <span>{post.comments?.length > 0 ? `${post.comments.length} Replies` : 'Reply'}</span>
-                  </button>
-                  <button className="flex items-center gap-1.5 hover:text-white transition-colors text-sm font-medium">
-                    <Share2 size={18} />
-                    <span>Share</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Comments Section */}
-              {post.comments?.length > 0 && (
-                <div className="mt-5 pt-5 border-t border-white/5 space-y-3">
-                  {post.comments.map(c => (
-                    <div key={c.id} className="flex gap-3 bg-white/[0.02] p-3 rounded-xl border border-white/[0.02]">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-[10px] text-white shrink-0 mt-0.5">
-                        {c.user_name.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="flex items-baseline gap-2 mb-0.5">
-                          <span className="text-sm font-medium text-slate-300">{c.user_name}</span>
-                          <span className="text-xs text-slate-500">{new Date(c.timestamp).toLocaleDateString()}</span>
-                        </div>
-                        <p className="text-sm text-slate-400">{c.text}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Active Reply Box */}
-              {activeReply === post.id && (
-                <div className="mt-4 pt-4 border-t border-white/5 flex gap-3 animate-in fade-in slide-in-from-top-2">
-                  <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center font-bold text-xs text-white shrink-0">
-                    {user ? user.display_name.charAt(0) : '?'}
-                  </div>
-                  <input 
-                    type="text"
-                    placeholder={user ? "Type your thoughtful reply..." : "Sign in to reply..."}
-                    value={replyTexts[post.id] || ""}
-                     onChange={e => setReplyTexts({ ...replyTexts, [post.id]: e.target.value })}
-                    onKeyDown={e => e.key === 'Enter' && handleAddComment(post.id)}
-                    disabled={!user}
-                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors disabled:opacity-50"
-                  />
-                  <button onClick={() => handleAddComment(post.id)} disabled={!user || !replyTexts[post.id]?.trim()} className="bg-purple-600 hover:bg-purple-500 disabled:bg-slate-800 disabled:text-slate-500 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-lg">
-                    Post
-                  </button>
-                </div>
-              )}
             </div>
           </div>
-        )
-        })}
-        {posts.length === 0 && <div className="text-center text-slate-500 py-10 border border-dashed border-white/10 rounded-2xl">No posts yet! Be the first to start a discussion.</div>}
+        </div>
+
+        {/* Feed Tabs */}
+        <div className="flex items-center gap-6 mb-6 border-b border-white/10 pb-4">
+          <button 
+            onClick={() => setActiveTab('feed')}
+            className={`font-medium pb-4 -mb-[17px] border-b-2 transition-colors ${activeTab === 'feed' ? 'text-white border-neon-blue' : 'text-slate-400 border-transparent hover:text-white'}`}
+          >
+            My Feed
+          </button>
+          <button 
+            onClick={() => setActiveTab('campus')}
+            className={`font-medium pb-4 -mb-[17px] border-b-2 transition-colors ${activeTab === 'campus' ? 'text-white border-neon-blue' : 'text-slate-400 border-transparent hover:text-white'}`}
+          >
+            Campus Global
+          </button>
+        </div>
+
+        {/* Posts */}
+        <div className="space-y-6">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="w-10 h-10 border-2 border-neon-blue/20 border-t-neon-blue rounded-full animate-spin mb-4"></div>
+              <p className="text-sm text-slate-500">Loading posts...</p>
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="glass rounded-3xl p-12 border border-white/5 text-center">
+              <div className="text-4xl mb-4">✨</div>
+              <h3 className="text-lg font-bold text-white mb-2">No posts yet</h3>
+              <p className="text-slate-400 text-sm mb-6">
+                {user ? "Be the first to share an update!" : "Sign in to post and see community updates."}
+              </p>
+              {!user && (
+                <button onClick={login} className="px-6 py-3 bg-white text-black font-semibold rounded-full hover:bg-slate-200 transition-colors text-sm">
+                  Sign In
+                </button>
+              )}
+            </div>
+          ) : (
+            <AnimatePresence>
+              {posts.map((post, i) => (
+                <motion.div
+                  key={post.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: i * 0.1 }}
+                  className="glass rounded-3xl p-6 border border-white/5 group"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex gap-3 items-center">
+                      <img 
+                        src={post.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.name || post.user_name || 'User')}&bg=0D0D0D&color=fff`} 
+                        alt={post.author?.name || post.user_name || 'User'} 
+                        className="w-10 h-10 rounded-full" 
+                      />
+                      <div>
+                        <h4 className="font-bold text-sm">{post.author?.name || post.user_name || 'Anonymous'}</h4>
+                        <p className="text-xs text-slate-400">{post.author?.role || 'Community Member'} • {post.time || 'Just now'}</p>
+                      </div>
+                    </div>
+                    <button className="text-slate-500 hover:text-white"><Award size={18} /></button>
+                  </div>
+                  
+                  <p className="text-slate-200 text-sm leading-relaxed mb-4">
+                    {post.content}
+                  </p>
+                  
+                  {post.tags && (
+                    <div className="flex gap-2 mb-6 flex-wrap">
+                      {post.tags.map(tag => (
+                        <span key={tag} className="text-xs text-neon-blue bg-neon-blue/10 px-2 py-1 rounded-md">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex gap-6 border-t border-white/5 pt-4">
+                    <button 
+                      onClick={() => handleLike(post.id)}
+                      className={`flex items-center gap-2 text-sm transition-colors ${likedPosts.has(post.id) ? 'text-neon-magenta' : 'text-slate-400 hover:text-white'}`}
+                    >
+                      <Heart size={18} className={likedPosts.has(post.id) ? 'fill-neon-magenta' : ''} /> 
+                      {(post.likes || 0) + (likedPosts.has(post.id) ? 1 : 0)}
+                    </button>
+                    <button className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors">
+                      <MessageSquare size={18} /> {post.comments || 0}
+                    </button>
+                    <button className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors ml-auto">
+                      <Share2 size={18} />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
+        </div>
       </div>
+
+      {/* Right Sidebar */}
+      <div className="w-full lg:w-1/4 hidden lg:block">
+        <div className="sticky top-28 space-y-6">
+          <div className="glass-strong rounded-3xl p-6 border border-white/5">
+            <h4 className="font-bold mb-4 flex items-center gap-2">
+              <Zap size={16} className="text-neon-purple" /> Quick Links
+            </h4>
+            <div className="space-y-2">
+              <Link
+                to="/discover"
+                className="block px-4 py-3 glass rounded-xl text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2"
+              >
+                <Compass size={14} className="text-neon-teal" /> Explore Projects
+              </Link>
+              <Link
+                to="/onboarding"
+                className="block px-4 py-3 glass rounded-xl text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2"
+              >
+                <Rocket size={14} className="text-neon-purple" /> Create Profile
+              </Link>
+            </div>
+          </div>
+
+          {!user && (
+            <div className="glass rounded-3xl p-6 border border-white/5 text-center">
+              <h4 className="font-bold mb-2">Join Uni-Verse</h4>
+              <p className="text-xs text-slate-400 mb-4">Connect with students, find teams, and build together.</p>
+              <button 
+                onClick={login}
+                className="w-full py-3 bg-white text-black font-semibold rounded-xl hover:bg-slate-200 transition-colors text-sm"
+              >
+                Get Started
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
     </div>
   );
 }

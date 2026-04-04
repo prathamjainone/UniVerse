@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import {
     BarChart3, GitCommit, Shield, ShieldOff, AlertTriangle,
-    Activity, Code, Braces, GitBranch, RefreshCw, TrendingUp, Zap
+    Activity, Code, GitBranch, RefreshCw, TrendingUp, Zap
 } from 'lucide-react';
+/* eslint-disable no-unused-vars */
 import { motion, AnimatePresence } from 'framer-motion';
+/* eslint-enable no-unused-vars */
 import API_URL from '../api';
 
 // ── Animated percentage bar ───────────────────────────────────────────────
@@ -21,6 +23,7 @@ function ContributionBar({ percentage, color, delay = 0 }) {
 }
 
 // ── Stat pill ─────────────────────────────────────────────────────────────
+// eslint-disable-next-line no-unused-vars
 function StatPill({ icon: Icon, label, value, color }) {
     return (
         <div className="flex items-center gap-2 px-3 py-1.5 bg-black/30 rounded-lg border border-white/5">
@@ -85,6 +88,7 @@ export default function ContributionTracker({ projectId, isOwner }) {
             } else {
                 setError(json.detail || 'Scan failed');
             }
+        // eslint-disable-next-line no-unused-vars
         } catch (err) {
             setError('Failed to connect. Make sure the project has a GitHub URL linked.');
         } finally {
@@ -94,6 +98,7 @@ export default function ContributionTracker({ projectId, isOwner }) {
 
     useEffect(() => {
         fetchContributions();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [projectId]);
 
     // Sort contributors by score descending
