@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 /* eslint-enable no-unused-vars */
 
 export default function Navbar() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, login } = useAuth();
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -101,20 +101,20 @@ export default function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link 
-                    to="/onboarding"
+                  <button 
+                    onClick={login}
                     className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
                   >
                     Log In
-                  </Link>
-                  <Link 
-                    to="/onboarding"
+                  </button>
+                  <button 
+                    onClick={login}
                     className="relative group px-5 py-2 text-sm font-medium text-white rounded-full overflow-hidden"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-neon-purple to-neon-blue transition-all duration-300 group-hover:scale-105"></div>
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-white/20 transition-opacity duration-300"></div>
                     <span className="relative z-10">Get Started</span>
-                  </Link>
+                  </button>
                 </>
               )}
             </div>
@@ -183,13 +183,12 @@ export default function Navbar() {
                   </button>
                 </>
               ) : (
-                <Link 
-                  to="/onboarding"
-                  onClick={() => setMobileMenuOpen(false)}
+                <button 
+                  onClick={() => { login(); setMobileMenuOpen(false); }}
                   className="flex items-center justify-center py-3 rounded-xl bg-gradient-to-r from-neon-purple to-neon-blue text-white font-medium shadow-lg shadow-neon-purple/20"
                 >
                   Get Started
-                </Link>
+                </button>
               )}
             </div>
           </motion.div>

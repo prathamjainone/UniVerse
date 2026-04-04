@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Rocket, GraduationCap, Github, Briefcase, Plus, X } from 'lucide-react';
+import { Rocket, GraduationCap, Github, Briefcase, Plus, X, LogIn } from 'lucide-react';
 import API_URL from '../api';
 
 export default function Onboarding() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, login } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     branch: '',
@@ -18,9 +18,31 @@ export default function Onboarding() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!user) navigate('/');
     if (user?.has_profile) navigate('/discover');
   }, [user, navigate]);
+
+  // Show login prompt for unauthenticated users
+  if (!user) {
+    return (
+      <div className="pt-32 pb-20 px-4 flex flex-col items-center justify-center min-h-[70vh] relative z-10">
+        <div className="glass-strong rounded-3xl p-12 border border-white/5 max-w-md w-full text-center">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-neon-purple to-neon-blue flex items-center justify-center mx-auto mb-6">
+            <Rocket size={28} className="text-white" />
+          </div>
+          <h2 className="text-2xl font-outfit font-bold text-white mb-3">Join Uni-Verse</h2>
+          <p className="text-slate-400 text-sm mb-8">
+            Sign in with Google to create your profile and start discovering amazing hackathon teams.
+          </p>
+          <button
+            onClick={login}
+            className="w-full py-4 bg-white text-black font-semibold rounded-full hover:bg-slate-200 transition-colors flex items-center justify-center gap-2 text-sm"
+          >
+            <LogIn size={18} /> Sign in with Google
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleAddSkill = (e) => {
     e.preventDefault();

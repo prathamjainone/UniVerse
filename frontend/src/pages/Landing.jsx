@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 /* eslint-enable no-unused-vars */
 import { Users, Code, Rocket, ArrowRight, Sparkles, TerminalSquare, Github, ChevronDown, Globe, Shield, Zap } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Landing() {
+  const { login } = useAuth();
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { 
@@ -65,12 +67,12 @@ export default function Landing() {
             <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/20 to-neon-purple/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             Explore Projects <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </Link>
-          <Link 
-            to="/onboarding"
+          <button 
+            onClick={login}
             className="glass-strong px-8 py-4 font-semibold rounded-full flex items-center justify-center gap-2 hover:bg-white/10 transition-all duration-300 hover:-translate-y-1"
           >
             <Users size={18} className="text-slate-300" /> Join Community
-          </Link>
+          </button>
         </motion.div>
 
         {/* Feature Highlights Bar */}
