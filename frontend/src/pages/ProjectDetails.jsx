@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Users, MessageSquare, ArrowLeft, Sparkles,
-  Send, Mail, Trash2, Github, ExternalLink, X, Star, BookOpen, Code, BarChart3
+  Send, Mail, Trash2, Github, ExternalLink, X, Star, BookOpen, Code, BarChart3,
+  Brain, Shield, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis,
@@ -15,6 +16,7 @@ import { useAuth } from '../context/AuthContext';
 import API_URL from '../api';
 import WarRoomChat from '../components/WarRoomChat';
 import ContributionTracker from '../components/ContributionTracker';
+import ApplicantCompatibilityExam from '../components/ApplicantCompatibilityExam';
 
 export default function ProjectDetails() {
   const { id } = useParams();
@@ -27,6 +29,11 @@ export default function ProjectDetails() {
   const [commentText, setCommentText] = useState("");
   const [matchResult, setMatchResult] = useState(null);
   const [isMatching, setIsMatching] = useState(false);
+
+  // ── Compatibility Exam Modal State ────────────────────────────────────
+  const [showExamModal, setShowExamModal] = useState(false);
+  const [examEvaluation, setExamEvaluation] = useState(null);
+  const [joiningAfterExam, setJoiningAfterExam] = useState(false);
 
   // URL-based tab state
   const activeTab = searchParams.get('tab') || "discussion";
@@ -139,13 +146,24 @@ export default function ProjectDetails() {
     }
   };
 
-  const handleJoin = async () => {
+  const handleJoin = async (compatibilityExamData = null) => {
     if (!user) return login();
+
+    // If not a member AND not already requested AND no exam data yet → open exam modal
+    if (!isMember && !isRequested && !compatibilityExamData) {
+      setShowExamModal(true);
+      return;
+    }
+
     try {
+      const body = { user_id: user.uid };
+      if (compatibilityExamData) {
+        body.compatibility_exam = compatibilityExamData;
+      }
       const res = await fetch(`${API_URL}/api/projects/${id}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user.uid })
+        body: JSON.stringify(body)
       });
       const data = await res.json();
       if (data.success) {
@@ -153,6 +171,37 @@ export default function ProjectDetails() {
       }
     } catch (err) {
       console.error("Failed to join project", err);
+    }
+  };
+
+  // Called when the compatibility exam is completed
+  const handleExamComplete = async (evaluation) => {
+    setExamEvaluation(evaluation);
+    setJoiningAfterExam(true);
+    // Auto-submit the join request with exam data
+    try {
+      const body = {
+        user_id: user.uid,
+        compatibility_exam: evaluation,
+      };
+      const res = await fetch(`${API_URL}/api/projects/${id}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Brief delay to show success state, then close modal
+        setTimeout(() => {
+          setShowExamModal(false);
+          setJoiningAfterExam(false);
+          setExamEvaluation(null);
+          fetchProject();
+        }, 2500);
+      }
+    } catch (err) {
+      console.error("Failed to join after exam", err);
+      setJoiningAfterExam(false);
     }
   };
 
@@ -596,7 +645,7 @@ export default function ProjectDetails() {
             {user && project.owner_uid !== user.uid && (
               <div className="px-5 pb-5">
                 <button
-                  onClick={handleJoin}
+                  onClick={() => handleJoin()}
                   className={`w-full font-bold py-3.5 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-sm ${isMember
                       ? 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20'
                       : isRequested
@@ -633,7 +682,12 @@ export default function ProjectDetails() {
               </h4>
 
               <div className="space-y-4 relative z-10">
-                {project.join_requests_info.map((req) => (
+                {project.join_requests_info.map((req) => {
+                  const exam = req.compatibility_exam;
+                  const score = exam?.totalCompatibilityScore;
+                  const scoreColor = score >= 70 ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : score >= 45 ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : score !== undefined ? 'text-red-400 bg-red-500/10 border-red-500/20' : '';
+
+                  return (
                   <div key={req.uid} className="bg-black/40 border border-white/5 rounded-xl p-4 transition-all hover:border-yellow-500/30">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-300">
@@ -643,12 +697,24 @@ export default function ProjectDetails() {
                         <p className="text-sm font-bold text-white leading-none mb-1">{req.name}</p>
                         <p className="text-[10px] text-slate-500 truncate">{req.branch || 'University Student'}</p>
                       </div>
+                      {/* AI Compatibility Score Badge */}
+                      {score !== undefined && (
+                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold ${scoreColor}`} title="AI Compatibility Score">
+                          <Brain size={12} />
+                          {score}%
+                        </div>
+                      )}
                       {req.github && (
-                        <button onClick={() => openGithubIntel(req)} className="text-emerald-500/40 hover:text-emerald-400 transition-colors ml-auto" title="GitHub Intel">
+                        <button onClick={() => openGithubIntel(req)} className="text-emerald-500/40 hover:text-emerald-400 transition-colors" title="GitHub Intel">
                           <Github size={14} />
                         </button>
                       )}
                     </div>
+
+                    {/* AI Compatibility Details (expandable) */}
+                    {exam && (
+                      <ExamInsightBlock exam={exam} />
+                    )}
 
                     {req.skills && req.skills.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-4">
@@ -668,7 +734,8 @@ export default function ProjectDetails() {
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -809,6 +876,116 @@ export default function ProjectDetails() {
         )}
       </AnimatePresence>
 
+      {/* ── Compatibility Exam Modal ─────────────────────────────────── */}
+      <AnimatePresence>
+        {showExamModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+            onClick={() => { if (!joiningAfterExam) setShowExamModal(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 30 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#0a0a0f] border border-white/10 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto"
+            >
+              {/* Modal Header */}
+              <div className="p-5 bg-gradient-to-r from-violet-500/10 to-cyan-500/10 border-b border-white/5 flex items-center justify-between sticky top-0 z-10 backdrop-blur-xl">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-violet-500/20 rounded-xl">
+                    <Shield size={18} className="text-violet-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-white uppercase tracking-widest">Compatibility Assessment</h3>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Complete to join {project?.title}</p>
+                  </div>
+                </div>
+                {!joiningAfterExam && (
+                  <button
+                    onClick={() => setShowExamModal(false)}
+                    className="p-1.5 text-slate-500 hover:text-white transition-colors"
+                  >
+                    <X size={18} />
+                  </button>
+                )}
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6">
+                <ApplicantCompatibilityExam
+                  projectContext={{
+                    id: project?.id,
+                    name: project?.title,
+                    techStack: project?.required_skills || [],
+                    currentPhase: project?.project_type || 'Development',
+                    recentChallenges: project?.description?.slice(0, 200) || '',
+                  }}
+                  applicantContext={{
+                    id: user?.uid,
+                    name: user?.display_name || user?.email || 'Applicant',
+                    knownSkills: user?.skills || [],
+                    bio: user?.bio || '',
+                  }}
+                  onComplete={handleExamComplete}
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+    </div>
+  );
+}
+
+// ── Inline helper: Expandable AI insight block for team lead ──────────
+function ExamInsightBlock({ exam }) {
+  const [expanded, setExpanded] = useState(false);
+  const radar = exam.radarMetrics || {};
+
+  return (
+    <div className="mb-3">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1.5 text-[10px] text-violet-400 hover:text-violet-300 font-semibold uppercase tracking-wider transition-colors mb-2"
+      >
+        <Brain size={10} />
+        AI Insight
+        {expanded ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+      </button>
+      {expanded && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="space-y-2"
+        >
+          {/* Radar Metric Bars */}
+          {[{ label: 'Tech Fit', value: radar.techFit, color: 'bg-cyan-500' },
+            { label: 'Culture Fit', value: radar.cultureFit, color: 'bg-violet-500' },
+            { label: 'Speed', value: radar.speed, color: 'bg-amber-500' },
+          ].map(m => (
+            m.value !== undefined && (
+              <div key={m.label} className="flex items-center gap-2">
+                <span className="text-[9px] text-slate-500 w-16 shrink-0">{m.label}</span>
+                <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                  <div className={`h-full ${m.color} rounded-full`} style={{ width: `${m.value}%` }} />
+                </div>
+                <span className="text-[9px] text-slate-400 w-7 text-right">{m.value}</span>
+              </div>
+            )
+          ))}
+          {/* Summary */}
+          {exam.summary && (
+            <p className="text-[10px] text-slate-400 italic leading-relaxed mt-1 p-2 bg-violet-500/5 rounded-lg border border-violet-500/10">
+              "{exam.summary}"
+            </p>
+          )}
+        </motion.div>
+      )}
     </div>
   );
 }

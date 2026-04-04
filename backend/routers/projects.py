@@ -19,6 +19,7 @@ class CommentRequest(BaseModel):
 
 class JoinRequest(BaseModel):
     user_id: str
+    compatibility_exam: dict = None  # Optional: exam evaluation from AI compatibility test
 
 @router.get("/", response_model=List[ProjectBase])
 def get_all_projects():
@@ -67,22 +68,24 @@ def get_single_project(project_id: str):
         else:
             members_resolved.append({"uid": uid, "name": "Unknown", "email": "No profile yet", "branch": "", "skills": [], "github": ""})
             
-    # Resolve join requests
+    # Resolve join requests — attach compatibility exam data if available
     request_uids = proj.get("join_requests", [])
+    compatibility_exams = proj.get("compatibility_exams", {})
     requests_resolved = []
     for uid in request_uids:
         profile = get_document('users', uid)
-        if profile:
-            requests_resolved.append({
-                "uid": uid,
-                "name": profile.get("display_name", "Unknown"),
-                "email": profile.get("email", "No email"),
-                "branch": profile.get("branch", ""),
-                "skills": profile.get("skills", []),
-                "github": profile.get("github", "")
-            })
-        else:
-            requests_resolved.append({"uid": uid, "name": "Unknown", "email": "No profile yet", "branch": "", "skills": [], "github": ""})
+        req_data = {
+            "uid": uid,
+            "name": profile.get("display_name", "Unknown") if profile else "Unknown",
+            "email": profile.get("email", "No email") if profile else "No profile yet",
+            "branch": profile.get("branch", "") if profile else "",
+            "skills": profile.get("skills", []) if profile else [],
+            "github": profile.get("github", "") if profile else "",
+        }
+        # Attach compatibility exam result if it exists for this applicant
+        if uid in compatibility_exams:
+            req_data["compatibility_exam"] = compatibility_exams[uid]
+        requests_resolved.append(req_data)
 
     proj["members_info"] = members_resolved
     proj["join_requests_info"] = requests_resolved
@@ -165,19 +168,39 @@ def join_project(project_id: str, payload: JoinRequest, background_tasks: Backgr
                 # Toggle join request
                 if payload.user_id in join_requests:
                     join_requests.remove(payload.user_id)
+                    # Also remove their compatibility exam data
+                    compatibility_exams = doc.get("compatibility_exams", {})
+                    compatibility_exams.pop(payload.user_id, None)
+                    update_document('projects', project_id, {
+                        "join_requests": join_requests,
+                        "compatibility_exams": compatibility_exams,
+                    })
                     status = "request_cancelled"
                 else:
                     join_requests.append(payload.user_id)
                     status = "requested"
+
+                    # Store compatibility exam results if provided
+                    update_data = {"join_requests": join_requests}
+                    if payload.compatibility_exam:
+                        compatibility_exams = doc.get("compatibility_exams", {})
+                        compatibility_exams[payload.user_id] = payload.compatibility_exam
+                        update_data["compatibility_exams"] = compatibility_exams
+
+                    update_document('projects', project_id, update_data)
+
                     from database import get_document
                     req_user = get_document('users', payload.user_id)
                     owner_profile = get_document('users', doc.get("owner_uid"))
                     if owner_profile and req_user and owner_profile.get("email"):
+                        score_info = ""
+                        if payload.compatibility_exam:
+                            score = payload.compatibility_exam.get("totalCompatibilityScore", "N/A")
+                            score_info = f" (AI Compatibility Score: {score}%)"
                         subject = f"New Join Request for {doc.get('title', 'your project')}"
-                        body = f"User {req_user.get('display_name')} has requested to join your project."
+                        body = f"User {req_user.get('display_name')} has requested to join your project.{score_info}"
                         background_tasks.add_task(send_email_notification, owner_profile.get("email"), subject, body)
                 
-                update_document('projects', project_id, {"join_requests": join_requests})
                 return {"success": True, "status": status, "join_requests": join_requests}
                 
     return {"success": False, "error": "Project not found"}
