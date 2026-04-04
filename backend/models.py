@@ -17,6 +17,7 @@ class ProjectBase(BaseModel):
     title: str
     description: str
     owner_uid: str
+    category: str = "Open Innovation"
     required_skills: List[str] = []
     members: List[str] = [] 
     upvotes: int = 0

@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 export default function CreateProjectModal({ isOpen, onClose, onSubmit }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('Web');
   const [skills, setSkills] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -16,11 +17,12 @@ export default function CreateProjectModal({ isOpen, onClose, onSubmit }) {
     setIsSubmitting(true);
     const skillArray = skills.split(',').map(s => s.trim()).filter(Boolean);
     
-    await onSubmit({ title, description, required_skills: skillArray, members: [] });
+    await onSubmit({ title, description, category, required_skills: skillArray, members: [] });
     
     setIsSubmitting(false);
     setTitle('');
     setDescription('');
+    setCategory('Web');
     setSkills('');
     onClose();
   };
@@ -54,6 +56,20 @@ export default function CreateProjectModal({ isOpen, onClose, onSubmit }) {
               className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50 resize-none"
               placeholder="Explain what you are building and why..."
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Project Category</label>
+            <select 
+              value={category} onChange={(e) => setCategory(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500/50 cursor-pointer appearance-none"
+            >
+              <option value="Web">Web</option>
+              <option value="Mobile App">Mobile App</option>
+              <option value="Blockchain">Blockchain</option>
+              <option value="AI/ML">AI/ML</option>
+              <option value="Open Innovation">Open Innovation</option>
+            </select>
           </div>
 
           <div>

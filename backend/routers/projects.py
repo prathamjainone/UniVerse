@@ -72,15 +72,25 @@ def get_single_project(project_id: str):
     proj["join_requests_info"] = requests_resolved
     return {"success": True, "project": proj}
 
+@router.delete("/{project_id}")
+def delete_project(project_id: str):
+    from database import delete_document
+    success = delete_document('projects', project_id)
+    if success:
+        return {"success": True}
+    return {"success": False, "error": "Project not found"}
+
 @router.post("/", response_model=ProjectBase)
 def create_project(project: ProjectBase):
     data = project.model_dump(exclude={'id'})
     data['created_at'] = project.created_at.strftime('%Y-%m-%dT%H:%M:%S')
+    data['members'] = [project.owner_uid]
     data['upvoted_by'] = []
     data['comments'] = []
     data['join_requests'] = []
     new_id = create_document('projects', data)
     project.id = new_id
+    project.members = data['members']
     return project
 
 @router.post("/{project_id}/upvote")

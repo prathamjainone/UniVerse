@@ -1,42 +1,33 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Rocket, Map, List, Star, Users, ArrowRight } from 'lucide-react';
+import { Search, Rocket, Map, List, Star, Users, ArrowRight, Plus, Trash2 } from 'lucide-react';
 /* eslint-disable no-unused-vars */
 import { motion, AnimatePresence } from 'framer-motion';
 /* eslint-enable no-unused-vars */
 import API_URL from '../api';
+import { useAuth } from '../context/AuthContext';
+import CreateProjectModal from '../components/CreateProjectModal';
 
-// Galaxy categories — fixed positions for consistent Map layout
+// Galaxy categories mapped directly to valid choices
 const GALAXY_DEFS = [
   { id: 'all', name: 'The Core', x: '50%', y: '50%', radius: 250, color: 'white' },
-  { id: 'AI', name: 'AI Nebula', x: '20%', y: '30%', radius: 150, color: 'var(--color-neon-purple)' },
-  { id: 'Finance', name: 'DeFi Cluster', x: '80%', y: '25%', radius: 120, color: 'var(--color-neon-teal)' },
-  { id: 'Health', name: 'MedTech System', x: '15%', y: '75%', radius: 180, color: 'var(--color-neon-magenta)' },
-  { id: 'EdTech', name: 'Edu Galaxy', x: '85%', y: '80%', radius: 140, color: 'var(--color-neon-blue)' },
-  { id: 'Web', name: 'Web Nebula', x: '50%', y: '15%', radius: 130, color: '#8888FF' },
-  { id: 'Other', name: 'Open Space', x: '50%', y: '85%', radius: 110, color: '#FFD700' },
+  { id: 'Web', name: 'Web', x: '50%', y: '15%', radius: 130, color: '#8888FF' },
+  { id: 'Mobile App', name: 'Mobile App', x: '15%', y: '75%', radius: 180, color: 'var(--color-neon-magenta)' },
+  { id: 'Blockchain', name: 'Blockchain', x: '80%', y: '25%', radius: 120, color: 'var(--color-neon-teal)' },
+  { id: 'AI/ML', name: 'AI/ML', x: '20%', y: '30%', radius: 150, color: 'var(--color-neon-purple)' },
+  { id: 'Open Innovation', name: 'Open Innovation', x: '85%', y: '80%', radius: 140, color: 'var(--color-neon-blue)' },
 ];
 
-// Pre-computed animation delays (avoid impure Math.random in render)
 const GALAXY_DELAYS = [0, 1.2, 2.4, 0.8, 3.1, 1.6, 2.0];
 
-// Map a project's type/category to a galaxy ID
-function categorize(project) {
-  const text = `${project.title} ${project.description} ${project.project_type || ''} ${(project.required_skills || []).join(' ')}`.toLowerCase();
-  if (text.includes('ai') || text.includes('machine learning') || text.includes('ml') || text.includes('nlp')) return 'AI';
-  if (text.includes('finance') || text.includes('defi') || text.includes('blockchain') || text.includes('crypto')) return 'Finance';
-  if (text.includes('health') || text.includes('med') || text.includes('patient') || text.includes('hospital')) return 'Health';
-  if (text.includes('edu') || text.includes('learn') || text.includes('tutor') || text.includes('school')) return 'EdTech';
-  if (text.includes('web') || text.includes('frontend') || text.includes('react') || text.includes('full-stack')) return 'Web';
-  return 'Other';
-}
-
 export default function Discover() {
+  const { user, login } = useAuth();
   const [viewMode, setViewMode] = useState('list');
   const [activeGalaxy, setActiveGalaxy] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   // Fetch real projects from backend
   useEffect(() => {
@@ -53,9 +44,43 @@ export default function Discover() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Categorize projects into galaxies
+  const handleCreateProject = async (projectData) => {
+    if (!user) return login();
+    const payload = {
+      ...projectData,
+      owner_uid: user.uid,
+    };
+    try {
+      const res = await fetch(`${API_URL}/api/projects/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        const newProj = await res.json();
+        setProjects([newProj, ...projects]);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleDeleteProject = async (projectId, e) => {
+    e.preventDefault();
+    if (!window.confirm("Are you sure you want to delete this project?")) return;
+    try {
+      const res = await fetch(`${API_URL}/api/projects/${projectId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setProjects(projects.filter(p => p.id !== projectId));
+      }
+    } catch (err) {
+      console.error("Failed to delete project", err);
+    }
+  };
+
+  // Assign projects to their chosen galaxy/category
   const categorizedProjects = useMemo(() => {
-    return projects.map(p => ({ ...p, galaxy: categorize(p) }));
+    return projects.map(p => ({ ...p, galaxy: p.category || 'Open Innovation' }));
   }, [projects]);
 
   const filteredProjects = categorizedProjects.filter(p => {
@@ -84,6 +109,13 @@ export default function Discover() {
         </div>
 
         <div className="flex gap-4 items-center">
+          <button 
+            onClick={() => user ? setIsCreateOpen(true) : login()}
+            className="hidden md:flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-neon-purple to-neon-blue text-white font-semibold rounded-full hover:shadow-[0_0_15px_rgba(168,85,247,0.5)] transition-all"
+          >
+            <Plus size={16} /> Create Project
+          </button>
+
           <div className="relative group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
@@ -182,7 +214,7 @@ export default function Discover() {
                               }}
                             >
                                <h4 className="text-xs font-bold text-white truncate">{project.title}</h4>
-                               <p className="text-[10px] text-slate-400 truncate">{project.galaxy || project.project_type}</p>
+                               <p className="text-[10px] text-slate-400 truncate">{project.galaxy}</p>
                                <div className="flex items-center gap-1 mt-1">
                                  <Users size={10} className="text-slate-500" />
                                  <span className="text-[10px] text-slate-500">{(project.members || []).length} members</span>
@@ -195,10 +227,15 @@ export default function Discover() {
                 ))}
 
                 {projects.length === 0 && (
-                  <div className="text-center z-30 relative">
+                  <div className="text-center z-30 relative flex flex-col items-center">
                     <Rocket size={48} className="text-slate-600 mx-auto mb-4" />
                     <p className="text-slate-400 text-lg font-medium">No projects in the universe yet</p>
-                    <p className="text-slate-500 text-sm mt-1">Be the first to create one!</p>
+                    <button 
+                      onClick={() => user ? setIsCreateOpen(true) : login()}
+                      className="mt-4 px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors font-medium text-sm border border-white/5"
+                    >
+                      Be the first to create one!
+                    </button>
                   </div>
                 )}
               </motion.div>
@@ -233,7 +270,9 @@ export default function Discover() {
                 {filteredProjects.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <AnimatePresence>
-                      {filteredProjects.map((project, i) => (
+                      {filteredProjects.map((project, i) => {
+                        const projColor = GALAXY_DEFS.find(g => g.id === project.galaxy)?.color || 'white';
+                        return (
                         <motion.div
                           layout
                           initial={{ opacity: 0, scale: 0.9 }}
@@ -243,16 +282,27 @@ export default function Discover() {
                           key={project.id}
                           className="group relative glass rounded-3xl p-6 border border-white/5 hover:bg-white/[0.03] transition-all overflow-hidden flex flex-col h-full"
                         >
-                          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity" style={{ backgroundColor: NEON_COLORS[i % NEON_COLORS.length] }}></div>
+                          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity" style={{ backgroundColor: projColor }}></div>
                           
                           <div className="flex justify-between items-start mb-4 relative z-10">
-                            <span className="text-xs font-medium px-3 py-1 rounded-full bg-white/5 border border-white/10" style={{ color: NEON_COLORS[i % NEON_COLORS.length] }}>
-                              {project.galaxy || project.project_type || 'Project'}
+                            <span className="text-xs font-medium px-3 py-1 rounded-full bg-white/5 border border-white/10" style={{ color: projColor }}>
+                              {project.galaxy}
                             </span>
-                            <div className="flex -space-x-2">
-                              {[...Array(Math.min((project.members || []).length || 1, 4))].map((_, j) => (
-                                <div key={j} className="w-8 h-8 rounded-full border-2 border-[#0a0a0f] bg-slate-800 shrink-0"></div>
-                              ))}
+                            <div className="flex items-center gap-3">
+                              {user && project.owner_uid === user.uid && (
+                                <button 
+                                  onClick={(e) => handleDeleteProject(project.id, e)} 
+                                  className="text-slate-500 hover:text-red-400 transition-colors z-20"
+                                  title="Delete Project"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              )}
+                              <div className="flex -space-x-2">
+                                {[...Array(Math.min((project.members || []).length || 1, 4))].map((_, j) => (
+                                  <div key={j} className="w-8 h-8 rounded-full border-2 border-[#0a0a0f] bg-slate-800 shrink-0"></div>
+                                ))}
+                              </div>
                             </div>
                           </div>
                           
@@ -281,7 +331,8 @@ export default function Discover() {
                             View Project <ArrowRight size={14} />
                           </Link>
                         </motion.div>
-                      ))}
+                        );
+                      })}
                     </AnimatePresence>
                   </div>
                 ) : (
@@ -299,6 +350,12 @@ export default function Discover() {
           </AnimatePresence>
         )}
       </div>
+
+      <CreateProjectModal 
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSubmit={handleCreateProject}
+      />
     </div>
   );
 }
