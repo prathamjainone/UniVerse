@@ -264,7 +264,7 @@ export default function Members() {
         {user && !isOwner && !isMember && (
           <div className="p-6 bg-black/20 border-t border-white/5 flex justify-center">
              <button
-              onClick={handleJoin}
+              onClick={() => handleJoin()}
               className={`w-full max-w-sm font-bold py-4 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-sm ${
                 isRequested
                   ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20'
