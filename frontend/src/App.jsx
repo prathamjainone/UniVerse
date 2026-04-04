@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { WarRoomProvider } from './context/WarRoomContext';
+import MiniCallOverlay from './components/MiniCallOverlay';
 import { useLocation, Navigate } from 'react-router-dom';
 import { useEffect, lazy, Suspense } from 'react';
 import Lenis from 'lenis';
@@ -80,6 +82,7 @@ export default function App() {
   return (
     <AuthProvider>
       <Router>
+        <WarRoomProvider>
         <div className="min-h-screen bg-[#030303] text-slate-100 font-sans relative overflow-x-hidden">
           {/* Subtle cosmic background layer */}
           <div className="absolute inset-0 z-0 opacity-40 pointer-events-none mix-blend-screen">
@@ -94,7 +97,11 @@ export default function App() {
               <AnimatedRoutes />
             </main>
           </div>
+
+          {/* Persistent floating call overlay */}
+          <MiniCallOverlay />
         </div>
+        </WarRoomProvider>
       </Router>
     </AuthProvider>
   );

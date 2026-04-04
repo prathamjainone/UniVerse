@@ -6,6 +6,7 @@ import { Send, Terminal, MessageSquare, Video, VideoOff, PhoneOff, Monitor, Code
 import { motion, AnimatePresence } from 'framer-motion';
 /* eslint-enable no-unused-vars */
 import API_URL from '../api';
+import { useWarRoom } from '../context/WarRoomContext';
 
 // --- Small Helper for Video ---
 function VideoPlayer({ stream, muted, label, isScreenShare, onDoubleClick, isFullscreen }) {
@@ -84,19 +85,6 @@ export default function WarRoomChat({ project, user }) {
   // --- Left Pane Tab ---
   const [leftTab, setLeftTab] = useState('notes'); // 'notes' | 'repo'
 
-  // --- Chat & Notes State (Persisted) ---
-  const [messages, setMessages] = useState(() => {
-    const saved = localStorage.getItem(`warroom_msgs_${projectId}`);
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [inputText, setInputText] = useState("");
-  const [sharedNotes, setSharedNotes] = useState(() => {
-    return localStorage.getItem(`warroom_notes_${projectId}`) || "";
-  });
-  const [isConnected, setIsConnected] = useState(false);
-  const scrollRef = useRef(null);
-  const socketRef = useRef(null);
-
   // --- GitHub Repo State ---
   const [repoUrl, setRepoUrl] = useState(project.github_url || '');
   const [repoInput, setRepoInput] = useState('');
@@ -106,145 +94,46 @@ export default function WarRoomChat({ project, user }) {
   const [repoLoading, setRepoLoading] = useState(false);
   const [repoError, setRepoError] = useState('');
 
-  // --- WebRTC State ---
-  const [inCall, setInCall] = useState(false);
-  const [isScreenSharing, setIsScreenSharing] = useState(false);
-  const [localStream, setLocalStream] = useState(null);
-  const [remoteStreams, setRemoteStreams] = useState({});
-  const localStreamRef = useRef(null);
-  const peerConnections = useRef({});
-  const [isMuted, setIsMuted] = useState(false);
-  const [isVideoOff, setIsVideoOff] = useState(false);
-  const [fullscreenVideo, setFullscreenVideo] = useState(null);
+
+  const {
+    isConnected, connectToRoom,
+    inCall, localStream, remoteStreams, isMuted, isVideoOff, isScreenSharing,
+    startHuddle, leaveHuddle, toggleMute, toggleVideo, shareScreen, stopScreenShare,
+    messages, sendMessage, sharedNotes, updateNotes,
+    isMOMEnabled, isGeneratingMOM, toggleMOM, generateMOM,
+    fullscreenVideo, setFullscreenVideo
+  } = useWarRoom();
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && fullscreenVideo) {
-        setFullscreenVideo(null);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [fullscreenVideo]);
+    connectToRoom(projectId, user, project);
+  }, [projectId, user, project, connectToRoom]);
 
-  const toggleMute = () => {
-    if (localStreamRef.current) {
-        const audioTracks = localStreamRef.current.getAudioTracks();
-        if (audioTracks.length > 0) {
-            audioTracks[0].enabled = !audioTracks[0].enabled;
-            setIsMuted(!audioTracks[0].enabled);
-        }
-    }
+  const [inputText, setInputText] = useState("");
+  const scrollRef = useRef(null);
+
+  // --- UI Actions ---
+  useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+  const handleSendText = () => {
+    if (!inputText.trim()) return;
+    sendMessage(inputText, user);
+    setInputText("");
   };
 
-  const toggleVideo = () => {
-    if (localStreamRef.current) {
-        const videoTracks = localStreamRef.current.getVideoTracks();
-        if (videoTracks.length > 0) {
-            videoTracks[0].enabled = !videoTracks[0].enabled;
-            setIsVideoOff(!videoTracks[0].enabled);
-        }
-    }
+  const handleNotesChange = (e) => {
+    updateNotes(e.target.value, user.uid);
   };
 
-  // --- MOM Generator State ---
-  const [isMOMEnabled, setIsMOMEnabled] = useState(false);
-  const [isGeneratingMOM, setIsGeneratingMOM] = useState(false);
-  const isMOMEnabledRef = useRef(false);
-  const sessionTranscripts = useRef([]);
-  const recognitionRef = useRef(null);
-
-  useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = false;
-    
-    recognition.onresult = (event) => {
-        const text = event.results[event.results.length - 1][0].transcript;
-        console.log("🗣️ Speech Captured:", text.trim());
-        
-        if (text.trim() && socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-            socketRef.current.send(JSON.stringify({ 
-                type: 'transcript', 
-                sender: user?.uid, 
-                user: user?.display_name, 
-                text: text.trim() 
-            }));
-        }
-    };
-    
-    recognition.onend = () => {
-        if (isMOMEnabledRef.current) {
-            try { recognition.start(); } catch { /* ignore */ }
-        }
-    };
-    recognitionRef.current = recognition;
-
-    return () => {
-        if (recognitionRef.current) recognitionRef.current.stop();
-    };
-  }, [user]);
-
-  const toggleMOM = () => {
-      const newState = !isMOMEnabled;
-      setIsMOMEnabled(newState);
-      isMOMEnabledRef.current = newState;
-      
-      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-          socketRef.current.send(JSON.stringify({ type: 'mom_control', enabled: newState }));
-      }
-      
-      if (newState && recognitionRef.current) {
-          try { recognitionRef.current.start(); } catch { /* ignore */ }
-      } else if (!newState && recognitionRef.current) {
-          recognitionRef.current.stop();
-      }
+  // --- Helper: time ago ---
+  const timeAgo = (dateStr) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
   };
 
-  const generateMOM = async () => {
-    if (!sessionTranscripts.current || sessionTranscripts.current.length === 0) {
-      alert("No transcripts recorded yet! Make sure you enable 'Start MOM Rec' and talk before generating MOM.");
-      return;
-    }
-    setIsGeneratingMOM(true);
-    try {
-      const res = await fetch(`${API_URL}/api/projects/${projectId}/generate_mom`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-           transcripts: sessionTranscripts.current,
-           fallback_title: project.title || 'Project',
-           fallback_members: project.members || []
-        })
-      });
-      const data = await res.json();
-      if (data.success) {
-         // The sent emails are handled by the backend.
-         // We do not paste it into the shared notes anymore.
-         if (data.members_notified > 0) {
-           alert(`MOM generated and emailed sequentially to ${data.members_notified} member(s)!`);
-         } else {
-           alert(`MOM generated successfully, but no members were notified (no valid emails found).`);
-         }
-         sessionTranscripts.current = [];
-      } else {
-         alert(`Failed to generate MOM: ${data.error || 'Server rejected request.'}`);
-      }
-    } catch (err) {
-      console.error("MOM Gen Error", err);
-      alert("Failed to generate MOM.");
-    } finally {
-      setIsGeneratingMOM(false);
-    }
-  };
-
-  const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] };
-
-  // --- Persistence Hooks ---
-  useEffect(() => { localStorage.setItem(`warroom_msgs_${projectId}`, JSON.stringify(messages)); }, [messages, projectId]);
-  useEffect(() => { localStorage.setItem(`warroom_notes_${projectId}`, sharedNotes); }, [sharedNotes, projectId]);
 
   // --- Parse GitHub owner/repo ---
   const parseGithubRepo = (url) => {
@@ -319,243 +208,6 @@ export default function WarRoomChat({ project, user }) {
     } finally {
       setSavingRepo(false);
     }
-  };
-
-  // --- WebSocket Setup ---
-  useEffect(() => {
-    const wsBase = API_URL.replace(/^http/, 'ws');
-    const wsUrl = `${wsBase}/ws/chat/${projectId}`;
-
-    const socket = new WebSocket(wsUrl);
-    socketRef.current = socket;
-
-    socket.onopen = () => setIsConnected(true);
-
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      if (!data.type || data.type === 'chat') {
-        setMessages(prev => [...prev, data]);
-        return;
-      }
-      
-      if (data.type === 'mom_control') {
-          const enabled = data.enabled;
-          setIsMOMEnabled(enabled);
-          isMOMEnabledRef.current = enabled;
-          if (enabled && recognitionRef.current) {
-              try { recognitionRef.current.start(); } catch { /* ignore */ }
-          } else if (!enabled && recognitionRef.current) {
-              recognitionRef.current.stop();
-          }
-          return;
-      }
-      
-      if (data.type === 'transcript') {
-          sessionTranscripts.current.push(`${data.user}: ${data.text}`);
-        return;
-      }
-
-      if (data.type === 'editor_sync' && data.sender !== user.uid) {
-        setSharedNotes(data.payload);
-        return;
-      }
-
-      const { type, sender, target, payload } = data;
-      if (target && target !== user.uid) return;
-      if (sender === user.uid) return;
-
-      if (type === 'webrtc_join') {
-        if (localStreamRef.current) createPeerConnection(sender, true);
-      } else if (type === 'webrtc_offer') {
-        if (localStreamRef.current) handleOffer(sender, payload);
-      } else if (type === 'webrtc_answer') {
-        handleAnswer(sender, payload);
-      } else if (type === 'webrtc_ice') {
-        handleNewICECandidate(sender, payload);
-      } else if (type === 'webrtc_leave') {
-        removePeerConnection(sender);
-      }
-    };
-
-    socket.onclose = () => {
-      setIsConnected(false);
-      leaveHuddle();
-    };
-
-    return () => {
-      leaveHuddle();
-      socket.close();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId]);
-
-  // --- WebRTC Logic ---
-  const createPeerConnection = async (peerUid, isInitiator) => {
-    if (peerConnections.current[peerUid]) return;
-
-    const pc = new RTCPeerConnection(rtcConfig);
-    peerConnections.current[peerUid] = pc;
-
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(track => pc.addTrack(track, localStreamRef.current));
-    }
-
-    pc.onicecandidate = (e) => {
-      if (e.candidate && socketRef.current) {
-        socketRef.current.send(JSON.stringify({ type: 'webrtc_ice', sender: user.uid, target: peerUid, payload: e.candidate }));
-      }
-    };
-
-    pc.ontrack = (e) => setRemoteStreams(prev => ({ ...prev, [peerUid]: e.streams[0] }));
-
-    if (isInitiator) {
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      socketRef.current.send(JSON.stringify({ type: 'webrtc_offer', sender: user.uid, target: peerUid, payload: offer }));
-    }
-    return pc;
-  };
-
-  const handleOffer = async (peerUid, offer) => {
-    const pc = await createPeerConnection(peerUid, false);
-    await pc.setRemoteDescription(new RTCSessionDescription(offer));
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    socketRef.current.send(JSON.stringify({ type: 'webrtc_answer', sender: user.uid, target: peerUid, payload: answer }));
-  };
-
-  const handleAnswer = async (peerUid, answer) => {
-    const pc = peerConnections.current[peerUid];
-    if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
-  };
-
-  const handleNewICECandidate = async (peerUid, candidate) => {
-    const pc = peerConnections.current[peerUid];
-    if (pc) await pc.addIceCandidate(new RTCIceCandidate(candidate));
-  };
-
-  const removePeerConnection = (peerUid) => {
-    const pc = peerConnections.current[peerUid];
-    if (pc) {
-      pc.close();
-      delete peerConnections.current[peerUid];
-    }
-    setRemoteStreams(prev => {
-      const updated = { ...prev };
-      delete updated[peerUid];
-      return updated;
-    });
-  };
-
-  // --- Huddle Controls ---
-  const startHuddle = async () => {
-    try {
-      let stream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      } catch {
-        // Fallback to audio if video camera is unavailable or denied
-        stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-      }
-      setIsMuted(false);
-      setLocalStream(stream);
-      localStreamRef.current = stream;
-      setInCall(true);
-     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-        socketRef.current.send(JSON.stringify({ type: 'webrtc_join', sender: user.uid }));
-      }
-      if (isLeader) {
-        fetch(`${API_URL}/api/projects/${projectId}/notify_meeting`, { method: 'POST' }).catch(e => console.error(e));
-      }
-    } catch { alert("Camera/Microphone permissions denied or devices not found."); }
-  };
-
-  const shareScreen = async () => {
-    try {
-      const displayStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" } });
-      const screenTrack = displayStream.getVideoTracks()[0];
-
-      Object.values(peerConnections.current).forEach(pc => {
-        const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
-        if (sender) {
-          sender.replaceTrack(screenTrack).catch(e => console.error("ReplaceTrack Error", e));
-        }
-      });
-
-      if (localStreamRef.current) {
-        const newStream = new MediaStream([screenTrack]);
-        const audioTracks = localStreamRef.current.getAudioTracks();
-        if (audioTracks.length > 0) newStream.addTrack(audioTracks[0]);
-        setLocalStream(newStream);
-        localStreamRef.current = newStream;
-      }
-      setIsScreenSharing(true);
-
-      screenTrack.onended = () => {
-        stopScreenShare();
-      };
-    } catch (err) { console.error("Screen Share Failed", err); }
-  };
-
-  const stopScreenShare = async () => {
-    setIsScreenSharing(false);
-    try {
-      const camStream = await navigator.mediaDevices.getUserMedia({ video: true });
-      const camTrack = camStream.getVideoTracks()[0];
-
-      Object.values(peerConnections.current).forEach(pc => {
-        const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
-        if (sender) sender.replaceTrack(camTrack).catch(e => console.error(e));
-      });
-
-      if (localStreamRef.current) {
-        const restoredStream = new MediaStream([camTrack]);
-        const audioTracks = localStreamRef.current.getAudioTracks();
-        if (audioTracks.length > 0) restoredStream.addTrack(audioTracks[0]);
-        setLocalStream(restoredStream);
-        localStreamRef.current = restoredStream;
-      }
-    } catch (e) { console.error("Restore Camera Failed", e); }
-  };
-
-  const leaveHuddle = () => {
-    if (localStreamRef.current) localStreamRef.current.getTracks().forEach(t => t.stop());
-    setLocalStream(null);
-    localStreamRef.current = null;
-    setInCall(false);
-    setIsScreenSharing(false);
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({ type: 'webrtc_leave', sender: user.uid }));
-    }
-    Object.keys(peerConnections.current).forEach(removePeerConnection);
-  };
-
-  // --- UI Actions ---
-  useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
-
-  const handleSendText = () => {
-    if (!inputText.trim() || !socketRef.current) return;
-    socketRef.current.send(JSON.stringify({ type: 'chat', user: user.display_name, uid: user.uid, text: inputText, timestamp: new Date().toISOString() }));
-    setInputText("");
-  };
-
-  const handleNotesChange = (e) => {
-    const val = e.target.value;
-    setSharedNotes(val);
-    if (socketRef.current && isConnected) {
-      socketRef.current.send(JSON.stringify({ type: 'editor_sync', sender: user.uid, payload: val }));
-    }
-  };
-
-  // --- Helper: time ago ---
-  const timeAgo = (dateStr) => {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    return `${Math.floor(hours / 24)}d ago`;
   };
 
   const parsed = parseGithubRepo(repoUrl);
