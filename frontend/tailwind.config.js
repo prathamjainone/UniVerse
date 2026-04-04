@@ -14,11 +14,13 @@ export default {
         neon: {
           blue: '#00F0FF',
           purple: '#7000FF',
-          teal: '#00F0A0'
+          teal: '#00F0A0',
+          magenta: '#FF006E'
         },
         dark: {
-          bg: '#050505',
-          card: '#0a0a0a'
+          bg: '#030303',
+          card: '#0a0a0f',
+          surface: '#111118'
         }
       }
     },
