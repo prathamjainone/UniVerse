@@ -1,10 +1,10 @@
 import { useRef, useMemo, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
 
 /*  ───────────────────────────────────────────────────────────────────
     SUPERNOVA COSMIC BACKGROUND  –  Awwwards-grade generative galaxy
+    (Optimized: no post-processing, reduced particle count & sizes)
     ─────────────────────────────────────────────────────────────────── */
 
 // ── Seeded PRNG (deterministic, lint-safe) ──
@@ -51,6 +51,7 @@ const starVert = `
   }
 `;
 
+// ── Stars fragment: boosted alpha to compensate for removed Bloom ──
 const starFrag = `
   varying vec3  vColor;
   varying float vAlpha;
@@ -62,8 +63,8 @@ const starFrag = `
     float core  = 1.0 - d * 2.0;
     core = pow(core, 1.8);
 
-    float halo  = exp(-d * 5.0) * 0.6;
-    float spike = exp(-d * 12.0) * 0.3;          // brighter center spike
+    float halo  = exp(-d * 5.0) * 0.8;           // was 0.6 — boosted
+    float spike = exp(-d * 12.0) * 0.5;           // was 0.3 — boosted
 
     vec3  col = vColor * (core + halo + spike);
     float alpha = (core + halo + spike) * vAlpha;
@@ -72,7 +73,7 @@ const starFrag = `
   }
 `;
 
-// ── Nebula / gas clouds  (much more visible now) ──
+// ── Nebula / gas clouds ──
 const nebVert = `
   uniform float uTime;
   attribute float aScale;
@@ -92,11 +93,11 @@ const nebVert = `
 
     float att = 1.0 / -vp.z;
     gl_PointSize = aScale * 900.0 * att;
-    gl_PointSize = clamp(gl_PointSize, 2.0, 350.0);
+    gl_PointSize = clamp(gl_PointSize, 2.0, 175.0);   // was 350 — halved
 
     vColor = aColor;
-    // Much higher alpha than before (was 0.035, now 0.12-0.18)
-    vAlpha = 0.15 * (0.8 + 0.2 * sin(uTime * 0.2 + aPhase * 10.0));
+    // Boosted alpha to compensate for removed Bloom (was 0.15)
+    vAlpha = 0.22 * (0.8 + 0.2 * sin(uTime * 0.2 + aPhase * 10.0));
   }
 `;
 
@@ -134,13 +135,14 @@ const coreVert = `
 
     float att = 1.0 / -vp.z;
     gl_PointSize = aScale * 1200.0 * att;
-    gl_PointSize = clamp(gl_PointSize, 4.0, 500.0);
+    gl_PointSize = clamp(gl_PointSize, 4.0, 250.0);   // was 500 — halved
 
     vColor = aColor;
     vAlpha = 0.08 + 0.04 * sin(uTime * 0.15 + aPhase * 5.0);
   }
 `;
 
+// ── Core fragment: boosted color multiplier to compensate for removed Bloom ──
 const coreFrag = `
   varying vec3  vColor;
   varying float vAlpha;
@@ -152,7 +154,7 @@ const coreFrag = `
     float s = 1.0 - d * 2.0;
     s = pow(s, 4.0);
 
-    gl_FragColor = vec4(vColor * 1.5, s * vAlpha);
+    gl_FragColor = vec4(vColor * 2.0, s * vAlpha);   // was 1.5 — boosted
   }
 `;
 
@@ -168,9 +170,9 @@ const PALETTE = [
   [1.00, 1.00, 1.00],  // white
 ];
 
-// ── Stars: 5000 particles in a multi-arm spiral ──
+// ── Stars: 2500 particles in a multi-arm spiral (was 5000) ──
 function genStars() {
-  const N = 5000;
+  const N = 2500;
   const rng = mulberry32(42);
   const pos = new Float32Array(N * 3);
   const scl = new Float32Array(N);
@@ -207,7 +209,7 @@ function genStars() {
   return { pos, scl, pha, col, count: N };
 }
 
-// ── Nebula: 60 big soft clouds (was 25) ──
+// ── Nebula: 60 big soft clouds ──
 function genNebula() {
   const N = 60;
   const rng = mulberry32(99);
@@ -351,7 +353,11 @@ export default function CosmicBackground() {
   return (
     <div
       className="fixed inset-0 z-0"
-      style={{ pointerEvents: 'none' }}
+      style={{
+        pointerEvents: 'none',
+        /* CSS vignette replaces removed post-processing Vignette */
+        boxShadow: 'inset 0 0 200px 80px rgba(0,0,0,0.85)',
+      }}
       aria-hidden="true"
     >
       <Canvas
@@ -368,16 +374,7 @@ export default function CosmicBackground() {
         <ParticleLayer data={STARS}  vert={starVert} frag={starFrag} rotSpeed={0.012} />
         {/* Camera parallax */}
         <CameraRig />
-        {/* Post-processing: bloom + vignette */}
-        <EffectComposer>
-          <Bloom
-            intensity={1.2}
-            luminanceThreshold={0.15}
-            luminanceSmoothing={0.9}
-            mipmapBlur
-          />
-          <Vignette eskil={false} offset={0.1} darkness={0.85} />
-        </EffectComposer>
+        {/* Post-processing REMOVED — Bloom & Vignette replaced by shader tweaks + CSS */}
       </Canvas>
     </div>
   );

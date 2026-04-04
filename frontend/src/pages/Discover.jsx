@@ -235,13 +235,12 @@ export default function Discover() {
                     <AnimatePresence>
                       {filteredProjects.map((project, i) => (
                         <motion.div
-                          layout
                           initial={{ opacity: 0, scale: 0.9 }}
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.9 }}
                           transition={{ duration: 0.3, delay: i * 0.05 }}
                           key={project.id}
-                          className="group relative glass rounded-3xl p-6 border border-white/5 hover:bg-white/[0.03] transition-all overflow-hidden flex flex-col h-full"
+                          className="perf-card group relative glass rounded-3xl p-6 border border-white/5 hover:bg-white/[0.06] transition-all overflow-hidden flex flex-col h-full"
                         >
                           <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity" style={{ backgroundColor: NEON_COLORS[i % NEON_COLORS.length] }}></div>
                           

@@ -263,7 +263,7 @@ export default function ProjectDetails() {
   }));
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-6xl mx-auto px-4 pt-28 pb-6 animate-in fade-in slide-in-from-bottom-4 duration-500 relative z-10">
 
       {/* Back Navigation */}
       <Link to="/discover" className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors group">

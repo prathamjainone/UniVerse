@@ -88,8 +88,8 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center animate-in fade-in duration-500 pt-10 pb-20">
-      <div className="w-full max-w-2xl bg-white/[0.02] border border-white/5 p-8 md:p-12 rounded-3xl backdrop-blur-md shadow-2xl relative overflow-hidden">
+    <div className="min-h-[80vh] flex items-center justify-center animate-in fade-in duration-500 pt-28 pb-20">
+      <div className="w-full max-w-2xl bg-dark-card/95 border border-white/5 p-8 md:p-12 rounded-3xl shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
         
