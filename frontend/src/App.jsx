@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
+
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { useLocation, Navigate } from 'react-router-dom';
 import { useEffect, lazy, Suspense } from 'react';
@@ -11,7 +12,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 // ── Lazy-load ALL heavy page components for code splitting ──
 const CosmicBackground = lazy(() => import('./components/CosmicBackground'));
 const Landing = lazy(() => import('./pages/Landing'));
-const Home = lazy(() => import('./pages/Home'));
+const Community = lazy(() => import('./pages/Community'));
 const Discover = lazy(() => import('./pages/Discover'));
 const Onboarding = lazy(() => import('./pages/Onboarding'));
 const Profile = lazy(() => import('./pages/Profile'));
@@ -67,7 +68,7 @@ function AnimatedRoutes() {
         {/* Public routes — no guard */}
         <Route path="/" element={<Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><Landing /></motion.div></Suspense>} />
         <Route path="/discover" element={<Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><Discover /></motion.div></Suspense>} />
-        <Route path="/community" element={<Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><Home /></motion.div></Suspense>} />
+        <Route path="/community" element={<Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><Community /></motion.div></Suspense>} />
         <Route path="/onboarding" element={<Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><Onboarding /></motion.div></Suspense>} />
         <Route path="/projects/:id" element={<Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><ProjectDetails /></motion.div></Suspense>} />
         
