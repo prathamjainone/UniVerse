@@ -62,10 +62,10 @@ function AnimatedRoutes() {
         <Route path="/onboarding" element={<Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><Onboarding /></motion.div></Suspense>} />
         <Route path="/projects/:id" element={<Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><ProjectLayout /></motion.div></Suspense>}>
           <Route index element={<Overview />} />
-          <Route path="discussion" element={<Discussion />} />
-          <Route path="warroom" element={<WarRoom />} />
-          <Route path="contributions" element={<Contributions />} />
-          <Route path="members" element={<Members />} />
+          <Route path="/discussion" element={<Discussion />} />
+          <Route path="/warroom" element={<WarRoom />} />
+          <Route path="/contributions" element={<Contributions />} />
+          <Route path="/members" element={<Members />} />
         </Route>
         <Route path="/compatibility-exam" element={<Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><CompatibilityExam /></motion.div></Suspense>} />
         <Route path="/profile" element={
