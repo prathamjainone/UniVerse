@@ -10,7 +10,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           three: ['three', '@react-three/fiber', '@react-three/drei', '@react-three/postprocessing'],
-          firebase: ['firebase'],
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
           motion: ['framer-motion', 'gsap'],
         },
       },
