@@ -225,7 +225,7 @@ function AnimateWords({ words }) {
     <AnimatePresence mode="wait">
       <motion.span
         key={index}
-        initial={{ opacity: 0, y: 15, filter: 'blur(8px)', x: "-50%", y: "calc(-50% + 15px)" }}
+        initial={{ opacity: 0, filter: 'blur(8px)', x: "-50%", y: "calc(-50% + 15px)" }}
         animate={{ opacity: 1, y: "-50%", filter: 'blur(0px)', x: "-50%" }}
         exit={{ opacity: 0, y: "calc(-50% - 15px)", filter: 'blur(8px)', x: "-50%" }}
         transition={{ duration: 0.3, ease: "easeOut" }}
