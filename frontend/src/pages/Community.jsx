@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 /* eslint-enable no-unused-vars */
 import {
-  ChevronUp, ChevronDown, MessageSquare, Share2, Send, Trash2,
+  ChevronUp, ChevronDown, MessageSquare, Send, Trash2,
   TrendingUp, Clock, User, Sparkles, PenLine, Hash, X,
   LogIn, Compass, Rocket, Image as ImageIcon, AlertCircle
 } from 'lucide-react';
@@ -236,15 +236,6 @@ function PostCard({ post, userId, userName, userPhoto, onVote, onAddComment, onD
               userPhoto={userPhoto}
               onAddComment={onAddComment}
             />
-            <button
-              className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
-              onClick={() => {
-                navigator.clipboard.writeText(window.location.origin + '/community#' + post.id);
-              }}
-              title="Copy link"
-            >
-              <Share2 size={16} />
-            </button>
           </div>
         </div>
       </div>

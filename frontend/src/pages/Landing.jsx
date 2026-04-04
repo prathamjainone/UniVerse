@@ -56,7 +56,7 @@ export default function Landing() {
           className="text-lg md:text-xl text-slate-400 max-w-2xl mb-12 font-sans font-light leading-relaxed"
         >
           Uni-Verse breaks down branch silos. Connect with cross-disciplinary talent, 
-          manage your hackathon projects in real-time, and ship beautiful products together.
+          manage your collaborative projects in real-time, and ship beautiful products together.
         </motion.p>
 
         <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
@@ -214,7 +214,7 @@ export default function Landing() {
             <Link to="/onboarding" className="hover:text-white transition-colors">Join</Link>
           </div>
           <div className="text-xs text-slate-600">
-            Built for Hackathon &bull; React &bull; Three.js &bull; Framer Motion
+            Built with React &bull; FastAPI &bull; Firebase &bull; Framer Motion
           </div>
         </div>
       </motion.footer>

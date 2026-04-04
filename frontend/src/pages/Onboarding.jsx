@@ -31,7 +31,7 @@ export default function Onboarding() {
           </div>
           <h2 className="text-2xl font-outfit font-bold text-white mb-3">Join Uni-Verse</h2>
           <p className="text-slate-400 text-sm mb-8">
-            Sign in with Google to create your profile and start discovering amazing hackathon teams.
+            Sign in with Google to create your profile and start discovering amazing project teams.
           </p>
           <button
             onClick={login}
@@ -64,6 +64,7 @@ export default function Onboarding() {
       uid: user.uid,
       email: user.email,
       display_name: user.display_name,
+      photo_url: user.photo_url || "",
       ...formData,
       skills
     };
@@ -98,7 +99,7 @@ export default function Onboarding() {
             <Rocket className="text-white" size={32} />
           </div>
           <h1 className="text-3xl font-extrabold text-white mb-2">Complete Your Profile</h1>
-          <p className="text-slate-400">Tell us about yourself so we can match you with the perfect hackathons and teammates.</p>
+          <p className="text-slate-400">Tell us about yourself so we can match you with the perfect projects and teammates.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

@@ -105,7 +105,7 @@ export default function Discover() {
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-4xl font-outfit font-bold text-white mb-2">Stellar Discovery</h1>
-          <p className="text-slate-400">Explore hackathon projects across the universe.</p>
+          <p className="text-slate-400">Explore and collaborate on projects across the universe.</p>
         </div>
 
         <div className="flex gap-4 items-center">
@@ -298,9 +298,19 @@ export default function Discover() {
                                 </button>
                               )}
                               <div className="flex -space-x-2">
-                                {[...Array(Math.min((project.members || []).length || 1, 4))].map((_, j) => (
-                                  <div key={j} className="w-8 h-8 rounded-full border-2 border-[#0a0a0f] bg-slate-800 shrink-0"></div>
+                                {(project.member_photos || []).slice(0, 4).map((photo, j) => (
+                                  <img 
+                                    key={j} 
+                                    src={photo}
+                                    alt="member"
+                                    className="w-8 h-8 rounded-full border-2 border-[#0a0a0f] shrink-0 object-cover"
+                                  />
                                 ))}
+                                {(project.members || []).length === 0 && (
+                                  <div className="w-8 h-8 rounded-full border-2 border-[#0a0a0f] bg-slate-800 shrink-0 flex items-center justify-center">
+                                    <Users size={12} className="text-slate-500" />
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>

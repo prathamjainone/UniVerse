@@ -11,6 +11,7 @@ class UserBase(BaseModel):
     skills: List[str] = []
     bio: Optional[str] = ""
     github: Optional[str] = ""
+    photo_url: Optional[str] = ""
 
 class ProjectBase(BaseModel):
     id: Optional[str] = None
@@ -20,6 +21,7 @@ class ProjectBase(BaseModel):
     category: str = "Open Innovation"
     required_skills: List[str] = []
     members: List[str] = [] 
+    member_photos: List[str] = []
     upvotes: int = 0
     upvoted_by: List[str] = []
     comments: List[dict] = []

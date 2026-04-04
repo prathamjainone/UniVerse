@@ -22,8 +22,24 @@ class JoinRequest(BaseModel):
 
 @router.get("/", response_model=List[ProjectBase])
 def get_all_projects():
+    from database import get_document
     docs = get_collection('projects')
     docs_sorted = sorted(docs, key=lambda x: x.get('upvotes', 0), reverse=True)
+    
+    # Resolve member photos for discovery cards
+    for doc in docs_sorted:
+        member_uids = doc.get("members", [])
+        member_photos = []
+        for uid in member_uids:
+            profile = get_document('users', uid)
+            photo = profile.get("photo_url") if profile else None
+            # Fallback to UI avatars if no Google photo
+            if not photo:
+                name = profile.get("display_name", "U") if profile else uid
+                photo = f"https://ui-avatars.com/api/?name={name[:2]}&background=random&color=fff"
+            member_photos.append(photo)
+        doc["member_photos"] = member_photos
+        
     return [ProjectBase(**doc) for doc in docs_sorted]
     
 @router.get("/{project_id}", response_model=dict)

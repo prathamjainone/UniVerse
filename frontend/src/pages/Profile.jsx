@@ -99,6 +99,7 @@ export default function Profile() {
       uid: user.uid,
       email: user.email,
       display_name: user.display_name,
+      photo_url: user.photo_url || "",
       ...formData,
       skills
     };

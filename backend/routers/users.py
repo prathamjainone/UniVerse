@@ -17,6 +17,7 @@ class UserProfileRequest(BaseModel):
     github: Optional[str] = ""
     bio: str
     skills: List[str]
+    photo_url: Optional[str] = ""
 
 @router.get("/{uid}")
 def get_user_profile(uid: str):
