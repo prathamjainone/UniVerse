@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
 import { Users, Sparkles, Mail, Github, Trash2, BarChart3, X, Star, BookOpen, Code, ExternalLink, Shield, Brain, ChevronUp, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -9,6 +9,15 @@ import ApplicantCompatibilityExam from '../../components/ApplicantCompatibilityE
 export default function Members() {
   const { project, fetchProject, isMember, isRequested, isOwner } = useOutletContext();
   const { user, login, onlineUsers = [] } = useAuth();
+
+  // Real-time polling for owner to see new join requests
+  useEffect(() => {
+    if (!isOwner) return;
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') fetchProject();
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [isOwner, fetchProject]);
 
   // --- GitHub Intel Modal State ---
   const [intelModal, setIntelModal] = useState(null);
