@@ -48,24 +48,6 @@ export default function ProjectLayout() {
 
   useEffect(() => {
     fetchProject();
-    
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        fetchProject();
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    
-    const intervalId = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        fetchProject();
-      }
-    }, 30000);
-    
-    return () => {
-      clearInterval(intervalId);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
   }, [id]);
 
   if (loading) return (
