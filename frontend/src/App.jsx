@@ -53,9 +53,13 @@ const pageVariants = {
 
 function AnimatedRoutes() {
   const location = useLocation();
+  // Use a stable key for project sub-routes so ProjectLayout doesn't remount on tab switches
+  const routeKey = location.pathname.match(/^\/projects\/[^/]+/)
+    ? location.pathname.match(/^\/projects\/[^/]+/)[0]
+    : location.pathname;
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
+      <Routes location={location} key={routeKey}>
         <Route path="/" element={<Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><Landing /></motion.div></Suspense>} />
         <Route path="/discover" element={<Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><Discover /></motion.div></Suspense>} />
         <Route path="/community" element={<Suspense fallback={<PageFallback />}><motion.div {...pageVariants}><Community /></motion.div></Suspense>} />

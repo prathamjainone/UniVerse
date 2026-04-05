@@ -14,8 +14,8 @@ export default function ProjectLayout() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchProject = async () => {
-    setLoading(true);
+  const fetchProject = async (isInitial = false) => {
+    if (isInitial) setLoading(true);
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
@@ -47,7 +47,7 @@ export default function ProjectLayout() {
   };
 
   useEffect(() => {
-    fetchProject();
+    fetchProject(true);
   }, [id]);
 
   if (loading) return (
@@ -67,9 +67,14 @@ export default function ProjectLayout() {
             : 'This project may have been removed or the link is incorrect.'
           }
         </p>
-        <Link to="/discover" className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-full hover:bg-slate-200 transition-colors">
-          <ArrowLeft size={16} /> Back to Discover
-        </Link>
+        <div className="flex items-center justify-center gap-3">
+          <button onClick={() => fetchProject(true)} className="inline-flex items-center gap-2 px-6 py-3 bg-teal-500 text-white font-semibold rounded-full hover:bg-teal-400 transition-colors">
+            Retry
+          </button>
+          <Link to="/discover" className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-full hover:bg-slate-200 transition-colors">
+            <ArrowLeft size={16} /> Back to Discover
+          </Link>
+        </div>
       </div>
     </div>
   );
